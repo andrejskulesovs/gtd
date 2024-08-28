@@ -521,7 +521,9 @@
         }
 
         function formatDate(date) {
+            if (!date) return '';
             const d = new Date(date);
+            if (isNaN(d.getTime())) return 'Invalid Date';
             const day = String(d.getDate()).padStart(2, '0');
             const month = String(d.getMonth() + 1).padStart(2, '0');
             const year = d.getFullYear();
@@ -618,13 +620,15 @@
         document.getElementById('taskForm').onsubmit = function(e) {
             e.preventDefault();
             const taskId = document.getElementById('taskId').value;
+            const taskDate = document.getElementById('taskDate').value;
+  
             const task = {
                 id: taskId || Date.now().toString(),
                 name: document.getElementById('taskName').value,
                 description: quill.root.innerHTML,
                 project: document.getElementById('taskProject').value,
                 status: document.getElementById('taskStatus').value,
-                date: document.getElementById('taskDate').value,
+                date: taskDate ? new Date(taskDate).toISOString().split('T')[0] : null,
                 pomodoro: parseInt(document.getElementById('taskPomodoro').value, 10)
             };
             if (taskId) {
