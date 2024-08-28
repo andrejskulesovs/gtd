@@ -66,6 +66,7 @@
             padding: 10px;
             background-color: #d0d0d0;
             border-radius: 5px;
+            font-size: large;
         }
         .task-card {
             background-color: white;
@@ -140,7 +141,7 @@
             opacity: 0.8;
         }
         .delete-btn {
-            background-color: #722121;
+            background-color: #000;
             color: white;
         }
         .delete-btn:hover {
@@ -169,7 +170,8 @@
             resize: vertical;
         }
         .form-buttons {
-            display: end;
+            display: flex;
+            justify-content: flex-end;
             margin-top: 20px;
         }
         .save-btn {
@@ -179,7 +181,7 @@
         .cancel-btn {
             background-color: #f0f0f0;
             color: #333;
-            padding: 0 25px;
+            margin: 0 25px;
         }
         #projectList {
             list-style-type: none;
@@ -266,7 +268,7 @@
             width: 100%;
             padding: 10px;
             margin: 10px 0;
-            background-color: #4CAF50;
+            background-color: #000;
             color: white;
             border: none;
             border-radius: 4px;
@@ -274,6 +276,14 @@
         }
         #loginContainer button:hover {
             background-color: #45a049;
+        }
+
+        #projectForm {
+            display: block;
+            .save-btn {
+                background-color: #000;
+                margin: 15px;
+            }
         }
     </style>
 </head>
