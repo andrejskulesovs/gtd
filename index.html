@@ -140,7 +140,7 @@
             opacity: 0.8;
         }
         .delete-btn {
-            background-color: #ff4444;
+            background-color: #722121;
             color: white;
         }
         .delete-btn:hover {
@@ -169,8 +169,7 @@
             resize: vertical;
         }
         .form-buttons {
-            display: flex;
-            justify-content: space-between;
+            display: end;
             margin-top: 20px;
         }
         .save-btn {
@@ -180,6 +179,7 @@
         .cancel-btn {
             background-color: #f0f0f0;
             color: #333;
+            padding: 0 25px;
         }
         #projectList {
             list-style-type: none;
@@ -345,9 +345,9 @@
                 </div>
                 
                 <div class="form-buttons">
-                    <button type="submit" class="save-btn">Save</button>
-                    <button type="button" class="cancel-btn" onclick="closeModal('taskModal')">Cancel</button>
                     <button type="button" class="delete-btn" onclick="deleteTask()">Delete Task</button>
+                    <button type="button" class="cancel-btn" onclick="closeModal('taskModal')">Cancel</button>
+                    <button type="submit" class="save-btn">Save</button>
                 </div>
             </form>
         </div>
