@@ -246,30 +246,66 @@
         #showArchiveCheckbox {
             margin-right: 5px;
         }
+        #loginContainer {
+            max-width: 300px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        #loginContainer input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        #loginContainer button {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #loginContainer button:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <button onclick="addNewTask()">Add New Task</button>
-            <button onclick="openProjectModal()">Edit Projects</button>
-        
-            <span>Filter:</span>
-            <select id="projectFilter" onchange="applyFilter()">
-                <option value="">All Projects</option>
-            </select>
-            <label>
-                <input type="checkbox" id="showArchiveCheckbox" onchange="toggleArchive()">
-                Show Archive
-            </label>
-            <button onclick="document.getElementById('importFile').click()">Import Data</button>
-            <button onclick="exportData()">Export Data</button>
-            <input type="file" id="importFile" style="display: none;" onchange="importData(event)">
+        <div id="loginContainer">
+            <h2>Login</h2>
+            <input type="email" id="emailInput" placeholder="Email">
+            <input type="password" id="passwordInput" placeholder="Password">
+            <button onclick="login()">Login</button>
+            <button onclick="register()">Register</button>
         </div>
+        <div id="appContainer" style="display: none;">
+            <div class="header">
+                <button onclick="addNewTask()">Add New Task</button>
+                <button onclick="openProjectModal()">Edit Projects</button>
+            
+                <span>Filter:</span>
+                <select id="projectFilter" onchange="applyFilter()">
+                    <option value="">All Projects</option>
+                </select>
+                <label>
+                    <input type="checkbox" id="showArchiveCheckbox" onchange="toggleArchive()">
+                    Show Archive
+                </label>
+                <button onclick="logout()">Logout</button>
+            </div>
 
-        <div id="projectWarnings"></div>
-    
-        <div class="board" id="board"></div>
+            <div id="projectWarnings"></div>
+        
+            <div class="board" id="board"></div>
+        </div>
     </div>
     <div id="taskModal" class="modal">
         <div class="modal-content">
@@ -334,35 +370,121 @@
         </div>
     </div>
 
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <!-- Add Quill library -->
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <!-- Add Flatpickr library -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        // Initialize Firebase
+ 
+        const firebaseConfig = {
+            apiKey: "AIzaSyCaWZRDYEE4yu20cbqVsEgjQYD7DFINlrY",
+
+            authDomain: "gtd-tracking.firebaseapp.com",
+
+            databaseURL: "https://gtd-tracking-default-rtdb.europe-west1.firebasedatabase.app",
+
+            projectId: "gtd-tracking",
+
+            storageBucket: "gtd-tracking.appspot.com",
+
+            messagingSenderId: "726694015626",
+
+            appId: "1:726694015626:web:24fb6334492e8457d83373",
+
+            measurementId: "G-99VN5DYBDH"
+        };
+
+
+        firebase.initializeApp(firebaseConfig);
+
+        const auth = firebase.auth();
+        const database = firebase.database();
+
         const statuses = ['In', 'Todo', 'InProgress', 'Waiting', 'Done', 'Maybe', 'Refs', 'Archive'];
-        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
-        let projects = JSON.parse(localStorage.getItem('projects')) || [];
+        let tasks = [];
+        let projects = [];
         let quill;
         let datepicker;
+        let currentUser = null;
 
-        function checkProjectWarnings() {
-            const warningsContainer = document.getElementById('projectWarnings');
-            warningsContainer.innerHTML = '';
+        function login() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            auth.signInWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'block';
+                    loadData();
+                })
+                .catch((error) => {
+                    alert('Login failed: ' + error.message);
+                });
+        }
 
-            const activeStatuses = ['Todo', 'InProgress'];
-            
-            projects.forEach(project => {
-                const hasActiveTasks = tasks.some(task => 
-                    task.project === project.name && activeStatuses.includes(task.status)
-                );
+        function register() {
+            const email = document.getElementById('emailInput').value;
+            const password = document.getElementById('passwordInput').value;
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    currentUser = userCredential.user;
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'block';
+                    initializeUserData();
+                })
+                .catch((error) => {
+                    alert('Registration failed: ' + error.message);
+                });
+        }
 
-                if (!hasActiveTasks) {
-                    const warningDiv = document.createElement('div');
-                    warningDiv.className = 'project-warning';
-                    warningDiv.textContent = `No active tasks for project: ${project.name}`;
-                    warningsContainer.appendChild(warningDiv);
-                }
+        function logout() {
+            auth.signOut().then(() => {
+                currentUser = null;
+                document.getElementById('loginContainer').style.display = 'block';
+                document.getElementById('appContainer').style.display = 'none';
+            }).catch((error) => {
+                console.error('Logout error:', error);
             });
+        }
+
+        function initializeUserData() {
+            database.ref('users/' + currentUser.uid).set({
+                tasks: [],
+                projects: []
+            });
+        }
+
+        function loadData() {
+            database.ref('users/' + currentUser.uid).on('value', (snapshot) => {
+                const data = snapshot.val();
+                tasks = data.tasks || [];
+                projects = data.projects || [];
+                renderBoard();
+                renderProjectList();
+                populateProjectFilter();
+            });
+        }
+
+        function saveData() {
+            database.ref('users/' + currentUser.uid).set({
+                tasks: tasks,
+                projects: projects
+            });
+        }
+
+        function saveTasks() {
+            saveData();
+        }
+
+        function saveProjects() {
+            saveData();
+            populateProjectFilter();
         }
 
         function renderBoard() {
@@ -524,15 +646,6 @@
             }
         }
 
-        function saveTasks() {
-            localStorage.setItem('tasks', JSON.stringify(tasks));
-        }
-
-        function saveProjects() {
-            localStorage.setItem('projects', JSON.stringify(projects));
-            populateProjectFilter();
-        }
-
         function openProjectModal() {
             const modal = document.getElementById('projectModal');
             renderProjectList();
@@ -595,42 +708,6 @@
             }
         }
 
-        function exportData() {
-            const data = {
-                tasks: tasks,
-                projects: projects
-            };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "gtd_data.json");
-            document.body.appendChild(downloadAnchorNode);
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }
-
-        function importData(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        tasks = data.tasks || [];
-                        projects = data.projects || [];
-                        saveTasks();
-                        saveProjects();
-                        renderBoard();
-                        renderProjectList();
-                        populateProjectFilter();
-                    } catch (error) {
-                        alert('Error importing data. Please make sure the file is a valid JSON.');
-                    }
-                };
-                reader.readAsText(file);
-            }
-        }
-
         function incrementPomodoro() {
             const pomodoroInput = document.getElementById('taskPomodoro');
             pomodoroInput.value = parseInt(pomodoroInput.value, 10) + 1;
@@ -663,6 +740,26 @@
             renderBoard();
         }
 
+        function checkProjectWarnings() {
+            const warningsContainer = document.getElementById('projectWarnings');
+            warningsContainer.innerHTML = '';
+
+            const activeStatuses = ['Todo', 'InProgress'];
+            
+            projects.forEach(project => {
+                const hasActiveTasks = tasks.some(task => 
+                    task.project === project.name && activeStatuses.includes(task.status)
+                );
+
+                if (!hasActiveTasks) {
+                    const warningDiv = document.createElement('div');
+                    warningDiv.className = 'project-warning';
+                    warningDiv.textContent = `No active tasks for project: ${project.name}`;
+                    warningsContainer.appendChild(warningDiv);
+                }
+            });
+        }
+
         // Initialize Quill editor, Flatpickr, and populate project filter
         document.addEventListener('DOMContentLoaded', function() {
             quill = new Quill('#editor-container', {
@@ -684,9 +781,17 @@
                 }
             });
 
-            renderBoard();
-            renderProjectList();
-            populateProjectFilter();
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'block';
+                    loadData();
+                } else {
+                    document.getElementById('loginContainer').style.display = 'block';
+                    document.getElementById('appContainer').style.display = 'none';
+                }
+            });
         });
     </script>
 </body>
