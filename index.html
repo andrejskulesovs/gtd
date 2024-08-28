@@ -596,7 +596,9 @@
                 quill.root.innerHTML = task.description;
                 document.getElementById('taskProject').value = task.project;
                 document.getElementById('taskStatus').value = task.status;
-                datepicker.setDate(task.date || '', false);
+                const dateObj = new Date(task.date);
+                const formattedDate = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}`;
+                datepicker.setDate(formattedDate, false);
                 document.getElementById('taskPomodoro').value = task.pomodoro || 0;
                 deleteBtn.style.display = 'inline-block';
             } else {
@@ -617,6 +619,12 @@
             closeBtn.onclick = () => closeModal(closeBtn.closest('.modal').id);
         });
 
+        function parseDate(dateString) {
+            if (!dateString) return null;
+            const [day, month, year] = dateString.split('-');
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+
         document.getElementById('taskForm').onsubmit = function(e) {
             e.preventDefault();
             const taskId = document.getElementById('taskId').value;
@@ -628,7 +636,7 @@
                 description: quill.root.innerHTML,
                 project: document.getElementById('taskProject').value,
                 status: document.getElementById('taskStatus').value,
-                date: taskDate ? new Date(taskDate).toISOString().split('T')[0] : null,
+                date: parseDate(taskDate),
                 pomodoro: parseInt(document.getElementById('taskPomodoro').value, 10)
             };
             if (taskId) {
@@ -782,7 +790,9 @@
             });
 
             datepicker = flatpickr("#taskDate", {
-                dateFormat: "Y-m-d",
+                dateFormat: "d-m-Y",
+                altInput: true,
+                altFormat: "d-m-Y",
                 allowInput: true,
                 locale: {
                     firstDayOfWeek: 1
