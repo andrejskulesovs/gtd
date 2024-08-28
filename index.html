@@ -475,6 +475,10 @@
             database.ref('users/' + currentUser.uid).set({
                 tasks: tasks,
                 projects: projects
+            }).then(() => {
+                console.log("Data saved successfully");
+            }).catch((error) => {
+                console.error("Data could not be saved." + error);
             });
         }
 
