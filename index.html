@@ -596,7 +596,7 @@
                 quill.root.innerHTML = task.description;
                 document.getElementById('taskProject').value = task.project;
                 document.getElementById('taskStatus').value = task.status;
-                document.getElementById('taskDate').value = task.date || '';
+                datepicker.setDate(task.date || '', false);
                 document.getElementById('taskPomodoro').value = task.pomodoro || 0;
                 deleteBtn.style.display = 'inline-block';
             } else {
@@ -782,10 +782,10 @@
             });
 
             datepicker = flatpickr("#taskDate", {
-                dateFormat: "d-m-Y",
+                dateFormat: "Y-m-d",
                 allowInput: true,
                 locale: {
-                 firstDayOfWeek: 1
+                    firstDayOfWeek: 1
                 }
             });
 
