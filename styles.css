@@ -42,13 +42,70 @@ body {
 .column {
     flex: 0 0 auto;
     margin-bottom: 20px;
-    background-color: #e0e0e0;
-    border-radius: 5px;
-    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     width: 100%;
     max-width: 100%;
+    margin: 0 8px;
+    min-width: 280px;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background-color: #d0d0d0;
+    border-radius: 5px;
+    margin-bottom: 10px;
+}
+
+.column-header h2 {
+    margin: 0;
+    padding: 0;
+    font-size: large;
+}
+
+.column-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.hide-column-btn {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.hide-column-btn:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+}
+
+.clear-archive-btn {
+    background-color: #dc3545;
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.clear-archive-btn:hover {
+    background-color: #c82333;
 }
 
 .column-content {
@@ -56,20 +113,19 @@ body {
     flex-grow: 1;
 }
 
-.column h2 {
-    margin-top: 0;
-    padding: 10px;
-    background-color: #d0d0d0;
-    border-radius: 5px;
-    font-size: large;
-}
-
 .task-card {
     background-color: white;
-    border-radius: 5px;
-    padding: 10px;
-    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
     cursor: move;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .task-card .project {
@@ -116,8 +172,8 @@ body {
     border: 1px solid #888;
     width: 90%;
     max-width: 600px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .close {
@@ -141,11 +197,16 @@ button {
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.3s;
+    font-weight: 500;
+    transition: all 0.2s ease;
 }
 
 button:hover {
     opacity: 0.8;
+}
+
+button:active {
+    transform: translateY(1px);
 }
 
 .delete-btn {
@@ -171,11 +232,19 @@ form input[type="text"],
 form textarea,
 form select {
     width: 100%;
-    padding: 8px;
+    padding: 10px;
     margin-top: 5px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
     box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+form input[type="text"]:focus,
+form select:focus,
+form textarea:focus {
+    border-color: #000;
+    outline: none;
 }
 
 form textarea {

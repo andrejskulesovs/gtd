@@ -1,4 +1,4 @@
-// Initialize Firebase
+// script.js
 const firebaseConfig = {
     apiKey: "AIzaSyCaWZRDYEE4yu20cbqVsEgjQYD7DFINlrY",
     authDomain: "gtd-tracking.firebaseapp.com",
@@ -106,6 +106,19 @@ function saveProjects() {
     restoreProjectFilter(previousFilter);
 }
 
+function clearArchive() {
+    if (confirm('Are you sure you want to delete all archived tasks? This action cannot be undone.')) {
+        tasks = tasks.filter(task => task.status !== 'Archive');
+        saveTasks();
+        renderBoard();
+    }
+}
+
+function hideColumn(status) {
+    selectedColumns.delete(status);
+    renderBoard();
+}
+
 function renderBoard() {
     checkProjectWarnings();
     
@@ -117,18 +130,43 @@ function renderBoard() {
         
         const column = document.createElement('div');
         column.className = 'column';
-        column.innerHTML = `<h2>${status}</h2><div class="column-content"></div>`;
+        
+        const columnHeader = document.createElement('div');
+        columnHeader.className = 'column-header';
+        columnHeader.innerHTML = `
+            <h2>${status}</h2>
+            <div class="column-controls">
+                ${status === 'Archive' ? 
+                    '<button class="clear-archive-btn" onclick="clearArchive()">Clear Archive</button>' : 
+                    ''
+                }
+                <button class="hide-column-btn" onclick="hideColumn('${status}')" title="Hide Column">
+                    <svg viewBox="0 0 24 24" width="14" height="14">
+                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        column.appendChild(columnHeader);
+        
+        const columnContent = document.createElement('div');
+        columnContent.className = 'column-content';
+        column.appendChild(columnContent);
+        
         column.ondragover = allowDrop;
         column.ondrop = (event) => drop(event, status);
-        const columnContent = column.querySelector('.column-content');
+        
         const statusTasks = tasks.filter(task => 
             task.status === status && 
             (!currentProjectFilter || task.project === currentProjectFilter || (!task.project && currentProjectFilter === ''))
         );
+        
         statusTasks.forEach(task => {
             const taskCard = createTaskCard(task);
             columnContent.appendChild(taskCard);
         });
+        
         board.appendChild(column);
     });
 }
@@ -217,7 +255,7 @@ function openTaskModal(task = null) {
         form.reset();
         document.getElementById('taskId').value = '';
         quill.root.innerHTML = '';
-        document.getElementById('taskProject').value = ''; // Set default to no project
+        document.getElementById('taskProject').value = '';
         document.getElementById('taskPomodoro').value = 0;
         deleteBtn.style.display = 'none';
     }
@@ -247,7 +285,7 @@ document.getElementById('taskForm').onsubmit = function(e) {
         id: taskId || Date.now().toString(),
         name: document.getElementById('taskName').value,
         description: quill.root.innerHTML,
-        project: document.getElementById('taskProject').value || null, // Allow empty project
+        project: document.getElementById('taskProject').value || null,
         status: document.getElementById('taskStatus').value,
         date: parseDate(taskDate),
         pomodoro: parseInt(document.getElementById('taskPomodoro').value, 10)
@@ -361,7 +399,6 @@ function populateProjectFilter() {
         projectFilter.appendChild(option);
     });
     
-    // Try to restore the previous selection
     if (projects.some(p => p.name === currentSelection) || currentSelection === '') {
         projectFilter.value = currentSelection;
     } else {
@@ -392,6 +429,7 @@ function populateColumnSelector() {
     const columnSelector = document.getElementById('columnSelector');
     columnSelector.innerHTML = '';
     statuses.forEach(status => {
+
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -443,7 +481,6 @@ function checkProjectWarnings() {
     });
 }
 
-// Initialize Quill editor, Flatpickr, and populate project filter
 document.addEventListener('DOMContentLoaded', function() {
     quill = new Quill('#editor-container', {
         theme: 'snow',
