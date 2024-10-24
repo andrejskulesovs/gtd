@@ -6,7 +6,8 @@ html, body {
 
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
+    background-color: #1a1a1a;
+    color: #e0e0e0;
     display: flex;
     flex-direction: column;
 }
@@ -42,7 +43,7 @@ body {
 .column {
     flex: 0 0 auto;
     margin-bottom: 20px;
-    background-color: #f5f5f5;
+    background-color: #2d2d2d;
     border-radius: 8px;
     padding: 12px;
     display: flex;
@@ -51,6 +52,7 @@ body {
     max-width: 100%;
     margin: 0 8px;
     min-width: 280px;
+    border: 1px solid #3d3d3d;
 }
 
 .column-header {
@@ -58,7 +60,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    background-color: #d0d0d0;
+    background-color: #363636;
     border-radius: 5px;
     margin-bottom: 10px;
 }
@@ -67,6 +69,7 @@ body {
     margin: 0;
     padding: 0;
     font-size: large;
+    color: #e0e0e0;
 }
 
 .column-controls {
@@ -80,7 +83,7 @@ body {
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: #666;
+    color: #999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -89,8 +92,8 @@ body {
 }
 
 .hide-column-btn:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    color: #333;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
 
 .clear-archive-btn {
@@ -114,18 +117,21 @@ body {
 }
 
 .task-card {
-    background-color: white;
+    background-color: #363636;
     border-radius: 8px;
     padding: 12px;
     margin-bottom: 12px;
     cursor: move;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    color: #e0e0e0;
+    border: 1px solid #404040;
 }
 
 .task-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    background-color: #404040;
 }
 
 .task-card .project {
@@ -139,10 +145,12 @@ body {
 .task-card .date {
     font-size: 0.8em;
     margin-top: 5px;
+    color: #bbb;
 }
 
 .task-card .date.overdue {
-    background-color: #ffcccc;
+    background-color: #662929;
+    color: #ffcccc;
     padding: 2px 5px;
     border-radius: 3px;
 }
@@ -150,7 +158,7 @@ body {
 .task-card .pomodoro {
     font-size: 0.8em;
     margin-top: 5px;
-    color: #666;
+    color: #bbb;
 }
 
 .modal {
@@ -161,23 +169,24 @@ body {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.4);
+    background-color: rgba(0,0,0,0.7);
     overflow-y: auto;
 }
 
 .modal-content {
-    background-color: #fefefe;
+    background-color: #2d2d2d;
     margin: 5% auto;
     padding: 20px;
-    border: 1px solid #888;
+    border: 1px solid #404040;
     width: 90%;
     max-width: 600px;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    color: #e0e0e0;
 }
 
 .close {
-    color: #aaa;
+    color: #888;
     float: right;
     font-size: 28px;
     font-weight: bold;
@@ -186,7 +195,7 @@ body {
 
 .close:hover,
 .close:focus {
-    color: black;
+    color: #fff;
     text-decoration: none;
     cursor: pointer;
 }
@@ -199,10 +208,12 @@ button {
     font-size: 14px;
     font-weight: 500;
     transition: all 0.2s ease;
+    background-color: #404040;
+    color: #e0e0e0;
 }
 
 button:hover {
-    opacity: 0.8;
+    background-color: #505050;
 }
 
 button:active {
@@ -210,12 +221,12 @@ button:active {
 }
 
 .delete-btn {
-    background-color: #000;
+    background-color: #dc3545;
     color: white;
 }
 
 .delete-btn:hover {
-    background-color: #cc0000;
+    background-color: #c82333;
 }
 
 form {
@@ -226,6 +237,7 @@ form {
 form label {
     margin-top: 10px;
     font-weight: bold;
+    color: #e0e0e0;
 }
 
 form input[type="text"],
@@ -234,17 +246,20 @@ form select {
     width: 100%;
     padding: 10px;
     margin-top: 5px;
-    border: 1px solid #e0e0e0;
+    background-color: #363636;
+    border: 1px solid #404040;
     border-radius: 6px;
     box-sizing: border-box;
     transition: border-color 0.2s ease;
+    color: #e0e0e0;
 }
 
 form input[type="text"]:focus,
 form select:focus,
 form textarea:focus {
-    border-color: #000;
+    border-color: #666;
     outline: none;
+    background-color: #404040;
 }
 
 form textarea {
@@ -265,13 +280,21 @@ form textarea {
 }
 
 .save-btn {
-    background-color: #4CAF50;
+    background-color: #28a745;
     color: white;
 }
 
+.save-btn:hover {
+    background-color: #218838;
+}
+
 .cancel-btn {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: #404040;
+    color: #e0e0e0;
+}
+
+.cancel-btn:hover {
+    background-color: #505050;
 }
 
 #projectList {
@@ -284,7 +307,8 @@ form textarea {
     justify-content: space-between;
     align-items: center;
     padding: 10px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid #404040;
+    color: #e0e0e0;
 }
 
 .color-preview {
@@ -298,10 +322,38 @@ form textarea {
 #editor-container {
     height: 200px;
     margin-bottom: 10px;
+    background-color: #363636;
+    border-radius: 6px;
 }
 
 .ql-editor {
     font-size: 14px;
+    color: #e0e0e0;
+}
+
+.ql-toolbar {
+    background-color: #404040;
+    border-color: #505050 !important;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+}
+
+.ql-toolbar button {
+    color: #e0e0e0 !important;
+}
+
+.ql-toolbar .ql-stroke {
+    stroke: #e0e0e0 !important;
+}
+
+.ql-toolbar .ql-fill {
+    fill: #e0e0e0 !important;
+}
+
+.ql-container {
+    border-color: #505050 !important;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
 }
 
 .pomodoro-control {
@@ -321,6 +373,11 @@ form textarea {
 #taskPomodoro {
     width: 50px;
     text-align: center;
+    background-color: #363636;
+    color: #e0e0e0;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    padding: 5px;
 }
 
 #projectWarnings {
@@ -328,50 +385,61 @@ form textarea {
 }
 
 .project-warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffeeba;
-    color: #856404;
-    padding: 5px;
+    background-color: #664d03;
+    border: 1px solid #997404;
+    color: #ffc107;
+    padding: 8px;
     border-radius: 4px;
 }
 
 #projectFilter, #viewSelector {
     padding: 8px;
     border-radius: 4px;
-    border: 1px solid #ddd;
+    border: 1px solid #404040;
+    background-color: #363636;
+    color: #e0e0e0;
 }
 
 #loginContainer {
     max-width: 300px;
     margin: 50px auto;
     padding: 20px;
-    background-color: #fff;
+    background-color: #2d2d2d;
     border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    color: #e0e0e0;
 }
 
 #loginContainer input {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
-    border: 1px solid #ddd;
+    border: 1px solid #404040;
     border-radius: 4px;
     box-sizing: border-box;
+    background-color: #363636;
+    color: #e0e0e0;
+}
+
+#loginContainer input:focus {
+    border-color: #666;
+    outline: none;
+    background-color: #404040;
 }
 
 #loginContainer button {
     width: 100%;
     padding: 10px;
     margin: 10px 0;
-    background-color: #000;
-    color: white;
+    background-color: #404040;
+    color: #e0e0e0;
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
 
 #loginContainer button:hover {
-    background-color: #45a049;
+    background-color: #505050;
 }
 
 #projectForm {
@@ -379,7 +447,7 @@ form textarea {
 }
 
 #projectForm .save-btn {
-    background-color: #000;
+    background-color: #28a745;
     margin: 15px 0;
 }
 
@@ -394,10 +462,30 @@ form textarea {
     display: flex;
     align-items: center;
     margin-right: 10px;
+    color: #e0e0e0;
 }
 
 #columnSelector input[type="checkbox"] {
     margin-right: 5px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #2d2d2d;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #505050;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #666;
 }
 
 @media (min-width: 768px) {
