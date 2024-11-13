@@ -23,6 +23,8 @@ let datepicker;
 let currentUser = null;
 let selectedColumns = new Set(statuses);
 let currentProjectFilter = '';
+let currentSortField = 'name';
+let currentSortOrder = 'asc';
 
 function login() {
     const email = document.getElementById('emailInput').value;
@@ -119,27 +121,45 @@ function hideColumn(status) {
     renderBoard();
 }
 
+function sortTasks(tasksToSort) {
+    return tasksToSort.sort((a, b) => {
+        let comparison = 0;
+        const priorityA = a.priority || 0;
+        const priorityB = b.priority || 0;
+
+        // First sort by priority (higher priority first)
+        comparison = priorityB - priorityA;
+
+        // If priorities are equal, sort by name
+        if (comparison === 0) {
+            comparison = a.name.localeCompare(b.name);
+        }
+
+        return currentSortOrder === 'asc' ? comparison : -comparison;
+    });
+}
+
 function renderBoard() {
     checkProjectWarnings();
-    
+
     const board = document.getElementById('board');
     board.innerHTML = '';
-    
+
     statuses.forEach(status => {
         if (!selectedColumns.has(status)) return;
-        
+
         const column = document.createElement('div');
         column.className = 'column';
-        
+
         const columnHeader = document.createElement('div');
         columnHeader.className = 'column-header';
         columnHeader.innerHTML = `
             <h2>${status}</h2>
             <div class="column-controls">
-                ${status === 'Archive' ? 
-                    '<button class="clear-archive-btn" onclick="clearArchive()">Clear Archive</button>' : 
-                    ''
-                }
+                ${status === 'Archive' ?
+            '<button class="clear-archive-btn" onclick="clearArchive()">Clear Archive</button>' :
+            ''
+        }
                 <button class="hide-column-btn" onclick="hideColumn('${status}')" title="Hide Column">
                     <svg viewBox="0 0 24 24" width="14" height="14">
                         <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -147,26 +167,28 @@ function renderBoard() {
                 </button>
             </div>
         `;
-        
+
         column.appendChild(columnHeader);
-        
+
         const columnContent = document.createElement('div');
         columnContent.className = 'column-content';
         column.appendChild(columnContent);
-        
+
         column.ondragover = allowDrop;
         column.ondrop = (event) => drop(event, status);
-        
-        const statusTasks = tasks.filter(task => 
-            task.status === status && 
+
+        let statusTasks = tasks.filter(task =>
+            task.status === status &&
             (!currentProjectFilter || task.project === currentProjectFilter || (!task.project && currentProjectFilter === ''))
         );
-        
+
+        statusTasks = sortTasks(statusTasks);
+
         statusTasks.forEach(task => {
             const taskCard = createTaskCard(task);
             columnContent.appendChild(taskCard);
         });
-        
+
         board.appendChild(column);
     });
 }
@@ -191,24 +213,30 @@ function createTaskCard(task) {
     const project = projects.find(p => p.name === task.project);
     const backgroundColor = project ? project.color : '#ffffff';
     const textColor = getContrastColor(backgroundColor);
-    
+
     let dateHtml = '';
     if (task.date) {
         const taskDate = new Date(task.date);
         const isOverdue = taskDate < new Date() && task.status !== 'Done';
         dateHtml = `<div class="date ${isOverdue ? 'overdue' : ''}">${formatDate(taskDate)}</div>`;
     }
-    
+
     let pomodoroHtml = '';
     if (task.pomodoro && task.pomodoro > 0) {
         pomodoroHtml = `<div class="pomodoro">Pomodoro: ${task.pomodoro}</div>`;
     }
-    
+
+    let priorityHtml = '';
+    if (task.priority) {
+        priorityHtml = `<div class="priority">Priority: ${task.priority}</div>`;
+    }
+
     card.innerHTML = `
         <div><strong>${task.name}</strong></div>
         ${task.project ? `<div class="project" style="background-color: ${backgroundColor}; color: ${textColor};">${task.project}</div>` : ''}
         ${dateHtml}
         ${pomodoroHtml}
+        ${priorityHtml}
     `;
     return card;
 }
@@ -231,7 +259,7 @@ function openTaskModal(task = null) {
     const form = document.getElementById('taskForm');
     const deleteBtn = document.querySelector('.delete-btn');
     const projectSelect = document.getElementById('taskProject');
-    
+
     projectSelect.innerHTML = '<option value="">No Project</option>';
     projects.forEach(project => {
         const option = document.createElement('option');
@@ -243,6 +271,7 @@ function openTaskModal(task = null) {
     if (task) {
         document.getElementById('taskId').value = task.id;
         document.getElementById('taskName').value = task.name;
+        document.getElementById('taskPriority').value = task.priority || 0;
         quill.root.innerHTML = task.description;
         document.getElementById('taskProject').value = task.project || '';
         document.getElementById('taskStatus').value = task.status;
@@ -254,6 +283,7 @@ function openTaskModal(task = null) {
     } else {
         form.reset();
         document.getElementById('taskId').value = '';
+        document.getElementById('taskPriority').value = 0;
         quill.root.innerHTML = '';
         document.getElementById('taskProject').value = '';
         document.getElementById('taskPomodoro').value = 0;
@@ -284,6 +314,7 @@ document.getElementById('taskForm').onsubmit = function(e) {
     const task = {
         id: taskId || Date.now().toString(),
         name: document.getElementById('taskName').value,
+        priority: parseInt(document.getElementById('taskPriority').value, 10) || 0,
         description: quill.root.innerHTML,
         project: document.getElementById('taskProject').value || null,
         status: document.getElementById('taskStatus').value,
@@ -388,6 +419,19 @@ function decrementPomodoro() {
     }
 }
 
+function incrementPriority() {
+    const priorityInput = document.getElementById('taskPriority');
+    priorityInput.value = parseInt(priorityInput.value, 10) + 1;
+}
+
+function decrementPriority() {
+    const priorityInput = document.getElementById('taskPriority');
+    const currentValue = parseInt(priorityInput.value, 10);
+    if (currentValue > 0) {
+        priorityInput.value = currentValue - 1;
+    }
+}
+
 function populateProjectFilter() {
     const projectFilter = document.getElementById('projectFilter');
     const currentSelection = projectFilter.value;
@@ -398,13 +442,13 @@ function populateProjectFilter() {
         option.textContent = project.name;
         projectFilter.appendChild(option);
     });
-    
+
     if (projects.some(p => p.name === currentSelection) || currentSelection === '') {
         projectFilter.value = currentSelection;
     } else {
         projectFilter.value = '';
     }
-    
+
     currentProjectFilter = projectFilter.value;
 }
 
@@ -429,7 +473,6 @@ function populateColumnSelector() {
     const columnSelector = document.getElementById('columnSelector');
     columnSelector.innerHTML = '';
     statuses.forEach(status => {
-
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
@@ -449,6 +492,11 @@ function populateColumnSelector() {
     });
 }
 
+function toggleSortOrder() {
+    currentSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    renderBoard();
+}
+
 function applyView() {
     const viewSelector = document.getElementById('viewSelector');
     const columnSelector = document.getElementById('columnSelector');
@@ -466,9 +514,9 @@ function checkProjectWarnings() {
     warningsContainer.innerHTML = '';
 
     const activeStatuses = ['Todo', 'InProgress'];
-    
+
     projects.forEach(project => {
-        const hasActiveTasks = tasks.some(task => 
+        const hasActiveTasks = tasks.some(task =>
             task.project === project.name && activeStatuses.includes(task.status)
         );
 
@@ -502,6 +550,8 @@ document.addEventListener('DOMContentLoaded', function() {
             firstDayOfWeek: 1
         }
     });
+
+    document.getElementById('sortOrderButton').addEventListener('click', toggleSortOrder);
 
     auth.onAuthStateChanged((user) => {
         if (user) {

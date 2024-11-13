@@ -507,3 +507,51 @@ form textarea {
         flex-wrap: nowrap;
     }
 }
+
+.priority {
+    font-size: 0.8em;
+    margin-top: 5px;
+    color: #ffd700;
+    background-color: rgba(255, 215, 0, 0.1);
+    padding: 2px 5px;
+    border-radius: 3px;
+    display: inline-block;
+}
+
+.priority-control {
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.priority-control button {
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+    margin: 0 5px;
+    padding: 0;
+}
+
+#taskPriority {
+    width: 50px;
+    text-align: center;
+    background-color: #363636;
+    color: #e0e0e0;
+    border: 1px solid #404040;
+    border-radius: 4px;
+    padding: 5px;
+}
+
+#sortOrderButton {
+    background-color: #404040;
+    color: #e0e0e0;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#sortOrderButton:hover {
+    background-color: #505050;
+}

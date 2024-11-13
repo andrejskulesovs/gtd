@@ -7,107 +7,113 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="loginContainer">
-        <h2>Login</h2>
-        <input type="email" id="emailInput" placeholder="Email">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <button onclick="register()">Register</button>
+<div id="loginContainer">
+    <h2>Login</h2>
+    <input type="email" id="emailInput" placeholder="Email">
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button onclick="login()">Login</button>
+    <button onclick="register()">Register</button>
+</div>
+
+<div id="appContainer" style="display: none;" class="container">
+    <div class="header">
+        <button onclick="addNewTask()">Add New Task</button>
+        <button onclick="openProjectModal()">Edit Projects</button>
+        <div>
+            <label for="projectFilter">Filter:</label>
+            <select id="projectFilter" onchange="applyFilter()">
+                <option value="">All Projects</option>
+            </select>
+        </div>
+        <div>
+            <label for="viewSelector">View:</label>
+            <select id="viewSelector">
+                <option value="all">All Columns</option>
+                <option value="custom">Custom</option>
+            </select>
+        </div>
+        <div id="columnSelector" style="display: none;"></div>
+        <button onclick="logout()">Logout</button>
     </div>
 
-    <div id="appContainer" style="display: none;" class="container">
-        <div class="header">
-            <button onclick="addNewTask()">Add New Task</button>
-            <button onclick="openProjectModal()">Edit Projects</button>
-            <div>
-                <label for="projectFilter">Filter:</label>
-                <select id="projectFilter" onchange="applyFilter()">
-                    <option value="">All Projects</option>
-                </select>
+    <div id="projectWarnings"></div>
+    <div id="board" class="board"></div>
+</div>
+<div id="taskModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Task Details</h2>
+        <form id="taskForm">
+            <input type="hidden" id="taskId">
+            <label for="taskName">Name:</label>
+            <input type="text" id="taskName" required>
+
+            <label for="taskPriority">Priority:</label>
+            <div class="priority-control">
+                <button type="button" onclick="decrementPriority()">-</button>
+                <input type="number" id="taskPriority" min="0" value="0">
+                <button type="button" onclick="incrementPriority()">+</button>
             </div>
-            <div>
-                <label for="viewSelector">View:</label>
-                <select id="viewSelector">
-                    <option value="all">All Columns</option>
-                    <option value="custom">Custom</option>
-                </select>
+
+            <label for="editor-container">Description:</label>
+            <div id="editor-container"></div>
+
+            <label for="taskProject">Project:</label>
+            <select id="taskProject"></select>
+
+            <label for="taskStatus">Status:</label>
+            <select id="taskStatus">
+                <option value="In">In</option>
+                <option value="Todo">Todo</option>
+                <option value="InProgress">In Progress</option>
+                <option value="Waiting">Waiting</option>
+                <option value="Done">Done</option>
+                <option value="Maybe">Maybe</option>
+                <option value="Refs">Refs</option>
+                <option value="Archive">Archive</option>
+            </select>
+
+            <label for="taskDate">Date:</label>
+            <input type="text" id="taskDate">
+
+            <label for="taskPomodoro">Pomodoro:</label>
+            <div class="pomodoro-control">
+                <button type="button" onclick="decrementPomodoro()">-</button>
+                <input type="number" id="taskPomodoro" min="0" value="0">
+                <button type="button" onclick="incrementPomodoro()">+</button>
             </div>
-            <div id="columnSelector" style="display: none;"></div>
-            <button onclick="logout()">Logout</button>
-        </div>
 
-        <div id="projectWarnings"></div>
-        <div id="board" class="board"></div>
+            <div class="form-buttons">
+                <button type="button" class="delete-btn" onclick="deleteTask()">Delete Task</button>
+                <button type="button" class="cancel-btn" onclick="closeModal('taskModal')">Cancel</button>
+                <button type="submit" class="save-btn">Save</button>
+            </div>
+        </form>
     </div>
+</div>
 
-    <div id="taskModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Task Details</h2>
-            <form id="taskForm">
-                <input type="hidden" id="taskId">
-                <label for="taskName">Name:</label>
-                <input type="text" id="taskName" required>
-                
-                <label for="editor-container">Description:</label>
-                <div id="editor-container"></div>
-                
-                <label for="taskProject">Project:</label>
-                <select id="taskProject"></select>
-                
-                <label for="taskStatus">Status:</label>
-                <select id="taskStatus">
-                    <option value="In">In</option>
-                    <option value="Todo">Todo</option>
-                    <option value="InProgress">In Progress</option>
-                    <option value="Waiting">Waiting</option>
-                    <option value="Done">Done</option>
-                    <option value="Maybe">Maybe</option>
-                    <option value="Refs">Refs</option>
-                    <option value="Archive">Archive</option>
-                </select>
-                
-                <label for="taskDate">Date:</label>
-                <input type="text" id="taskDate">
-                
-                <label for="taskPomodoro">Pomodoro:</label>
-                <div class="pomodoro-control">
-                    <button type="button" onclick="decrementPomodoro()">-</button>
-                    <input type="number" id="taskPomodoro" value="0" min="0">
-                    <button type="button" onclick="incrementPomodoro()">+</button>
-                </div>
-                
-                <div class="form-buttons">
-                    <button type="button" class="delete-btn" onclick="deleteTask()">Delete Task</button>
-                    <button type="button" class="cancel-btn" onclick="closeModal('taskModal')">Cancel</button>
-                    <button type="submit" class="save-btn">Save</button>
-                </div>
-            </form>
-        </div>
+<div id="projectModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Edit Projects</h2>
+        <form id="projectForm">
+            <label for="projectName">Name:</label>
+            <input type="text" id="projectName" required>
+
+            <label for="projectColor">Color:</label>
+            <input type="color" id="projectColor" required>
+
+            <button type="submit" class="save-btn">Add Project</button>
+        </form>
+        <ul id="projectList"></ul>
     </div>
+</div>
 
-    <div id="projectModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Edit Projects</h2>
-            <form id="projectForm">
-                <label for="projectName">Name:</label>
-                <input type="text" id="projectName" required>
-                
-                <label for="projectColor">Color:</label>
-                <input type="color" id="projectColor" required>
-                
-                <button type="submit" class="save-btn">Add Project</button>
-            </form>
-            <ul id="projectList"></ul>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="script.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="script.js"></script>
 </body>
 </html>
