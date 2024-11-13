@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Noise Generator</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 30px;
+        }
+
+        .preset-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+            width: 100%;
+        }
+
+        .preset-controls select {
+            background-color: #333333;
+            color: #e0e0e0;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-right: 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .preset-controls button {
+            background-color: #333333;
+            border: none;
+            color: #e0e0e0;
+            padding: 10px 20px;
+            margin: 0;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        .preset-controls button:hover {
+            background-color: #555555;
+        }
+
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .slider-container label {
+            margin-bottom: 5px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .slider-container input {
+            width: 80%;
+        }
+
+        .equalizer {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .eq-band {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 50px;
+            position: relative;
+            margin: 10px;
+        }
+
+        .eq-band input {
+            transform: rotate(-90deg);
+            margin-top: 30px;
+            width: 100px;
+            cursor: pointer;
+        }
+
+        .eq-band .gain-value {
+            position: absolute;
+            top: -25px;
+            font-size: 12px;
+            color: #e0e0e0;
+        }
+
+        footer {
+            margin-top: auto;
+            color: #777777;
+            font-size: 12px;
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1e1e1e;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #555555;
+            border-radius: 4px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .equalizer {
+                justify-content: center;
+            }
+
+            .eq-band {
+                margin: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+<h1>Noise Generator</h1>
+
+<div class="controls">
+    <div class="preset-controls">
+        <select id="noiseTypeSelect">
+            <option value="brown">Brown Noise</option>
+            <option value="deep_brown">Deep Brown</option>
+            <option value="pink">Pink Noise</option>
+            <option value="deep_pink">Deep Pink</option>
+            <option value="white">White Noise</option>
+            <option value="speech_blocker">Speech Blocker</option>
+        </select>
+        <button id="playStopBtn">Play</button>
+    </div>
+
+    <div class="volume-control slider-container">
+        <label for="volumeSlider">Volume</label>
+        <input type="range" id="volumeSlider" min="0" max="1" step="0.01" value="0.5">
+    </div>
+</div>
+
+<div class="equalizer">
+    <!-- Define 9 frequency bands for the equalizer -->
+    <div class="eq-band">
+        <div class="gain-value" id="gain-31">0 dB</div>
+        <label>31Hz</label>
+        <input type="range" class="eq-slider" data-frequency="31" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-62">0 dB</div>
+        <label>62Hz</label>
+        <input type="range" class="eq-slider" data-frequency="62" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-125">0 dB</div>
+        <label>125Hz</label>
+        <input type="range" class="eq-slider" data-frequency="125" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-250">0 dB</div>
+        <label>250Hz</label>
+        <input type="range" class="eq-slider" data-frequency="250" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-500">0 dB</div>
+        <label>500Hz</label>
+        <input type="range" class="eq-slider" data-frequency="500" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-1000">0 dB</div>
+        <label>1kHz</label>
+        <input type="range" class="eq-slider" data-frequency="1000" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-2000">0 dB</div>
+        <label>2kHz</label>
+        <input type="range" class="eq-slider" data-frequency="2000" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-4000">0 dB</div>
+        <label>4kHz</label>
+        <input type="range" class="eq-slider" data-frequency="4000" min="-60" max="12" step="0.1" value="0">
+    </div>
+    <div class="eq-band">
+        <div class="gain-value" id="gain-8000">0 dB</div>
+        <label>8kHz</label>
+        <input type="range" class="eq-slider" data-frequency="8000" min="-60" max="12" step="0.1" value="0">
+    </div>
+</div>
+
+<footer>
+    &copy; 2024 Enhanced Noise Generator App
+</footer>
+
+<script>
+    // Initialize Audio Context
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    const audioCtx = new AudioContext();
+
+    let noiseSource = null;
+    let gainNode = audioCtx.createGain();
+
+    // Define Preset Equalizer Settings
+    const presets = {
+        white: {
+            31: 0,
+            62: 0,
+            125: 0,
+            250: 0,
+            500: 0,
+            1000: 0,
+            2000: 0,
+            4000: 0,
+            8000: 0
+        },
+        pink: {
+            31: 3,
+            62: 2,
+            125: 1,
+            250: 0,
+            500: -1,
+            1000: -2,
+            2000: -3,
+            4000: -4,
+            8000: -5
+        },
+        deep_pink: {
+            31: 5,
+            62: 4,
+            125: 3,
+            250: 2,
+            500: 1,
+            1000: 0,
+            2000: -1,
+            4000: -2,
+            8000: -3
+        },
+        brown: {
+            31: 6,
+            62: 4,
+            125: 2,
+            250: 0,
+            500: -2,
+            1000: -4,
+            2000: -6,
+            4000: -8,
+            8000: -10
+        },
+        deep_brown: {
+            31: 8,
+            62: 6,
+            125: 4,
+            250: 2,
+            500: 0,
+            1000: -2,
+            2000: -4,
+            4000: -6,
+            8000: -8
+        },
+        speech_blocker: {
+            31: 0,
+            62: 0,
+            125: 3,
+            250: 6,
+            500: 6,
+            1000: 6,
+            2000: 6,
+            4000: 6,
+            8000: 6
+        }
+    };
+
+    // Create Equalizer Bands
+    const frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000];
+    const eqFilters = frequencies.map(freq => {
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'peaking';
+        filter.frequency.value = freq;
+        filter.Q.value = 1;
+        filter.gain.value = 0;
+        return filter;
+    });
+
+    // Connect Equalizer Filters in Series
+    let previousNode = gainNode;
+    eqFilters.forEach(filter => {
+        previousNode.connect(filter);
+        previousNode = filter;
+    });
+
+    // Add Lowpass Filter to Cut Off Above 8kHz
+    const lowpassFilter = audioCtx.createBiquadFilter();
+    lowpassFilter.type = 'lowpass';
+    lowpassFilter.frequency.value = 8000; // 8kHz cutoff
+    lowpassFilter.Q.value = 1;
+    previousNode.connect(lowpassFilter);
+    lowpassFilter.connect(audioCtx.destination);
+
+    // Connect to Destination
+    // previousNode.connect(audioCtx.destination); // Already connected via lowpassFilter
+
+    // Volume Control
+    const volumeSlider = document.getElementById('volumeSlider');
+    gainNode.gain.value = volumeSlider.value;
+    volumeSlider.addEventListener('input', (e) => {
+        gainNode.gain.value = e.target.value;
+    });
+
+    // Equalizer Sliders and Gain Value Displays
+    const eqSliders = document.querySelectorAll('.eq-slider');
+    eqSliders.forEach(slider => {
+        const freq = slider.getAttribute('data-frequency');
+        const gainValueDisplay = document.getElementById(`gain-${freq}`);
+
+        // Initialize display
+        gainValueDisplay.textContent = `${slider.value} dB`;
+
+        slider.addEventListener('input', (e) => {
+            const gain = e.target.value;
+            const filter = eqFilters.find(f => f.frequency.value == freq);
+            if (filter) {
+                filter.gain.value = gain;
+            }
+            gainValueDisplay.textContent = `${gain} dB`;
+        });
+    });
+
+    // Noise Generation Functions
+    function createWhiteNoise(bufferDuration = 30) { // 30 seconds buffer
+        const bufferSize = audioCtx.sampleRate * bufferDuration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        const whiteNoise = audioCtx.createBufferSource();
+        whiteNoise.buffer = buffer;
+        whiteNoise.loop = true;
+        return whiteNoise;
+    }
+
+    function createPinkNoise(bufferDuration = 30) { // 30 seconds buffer
+        const bufferSize = audioCtx.sampleRate * bufferDuration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = buffer.getChannelData(0);
+
+        let b0, b1, b2, b3, b4, b5, b6;
+        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+        for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+            output[i] *= 0.11; // (roughly) compensate for gain
+            b6 = white * 0.115926;
+        }
+
+        const pinkNoise = audioCtx.createBufferSource();
+        pinkNoise.buffer = buffer;
+        pinkNoise.loop = true;
+        return pinkNoise;
+    }
+
+    function createBrownNoise(bufferDuration = 30) { // 30 seconds buffer
+        const bufferSize = audioCtx.sampleRate * bufferDuration;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let lastOut = 0.0;
+
+        for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            lastOut = (lastOut + (0.02 * white)) / 1.02;
+            data[i] = lastOut * 3.5; // (roughly) compensate for gain
+        }
+
+        const brownNoise = audioCtx.createBufferSource();
+        brownNoise.buffer = buffer;
+        brownNoise.loop = true;
+        return brownNoise;
+    }
+
+    // Play Noise
+    function playNoise(noiseType) {
+        stopNoise();
+
+        if (noiseType === 'pink') {
+            noiseSource = createPinkNoise();
+        } else if (noiseType === 'deep_pink') {
+            noiseSource = createPinkNoise();
+        } else if (noiseType === 'brown') {
+            noiseSource = createBrownNoise();
+        } else if (noiseType === 'deep_brown') {
+            noiseSource = createBrownNoise();
+        } else if (noiseType === 'white') {
+            noiseSource = createWhiteNoise();
+        } else if (noiseType === 'speech_blocker') {
+            noiseSource = createPinkNoise(); // Using pink noise as base
+        } else {
+            noiseSource = createWhiteNoise();
+        }
+
+        noiseSource.connect(gainNode);
+        noiseSource.start(0);
+    }
+
+    // Stop Noise
+    function stopNoise() {
+        if (noiseSource) {
+            noiseSource.stop();
+            noiseSource.disconnect();
+            noiseSource = null;
+        }
+    }
+
+    // Apply Preset Equalizer Settings
+    function applyPreset(noiseType) {
+        const preset = presets[noiseType];
+        if (preset) {
+            eqSliders.forEach(slider => {
+                const freq = slider.getAttribute('data-frequency');
+                const newGain = preset[freq];
+                slider.value = newGain;
+                const filter = eqFilters.find(f => f.frequency.value == freq);
+                if (filter) {
+                    filter.gain.value = newGain;
+                }
+                const gainValueDisplay = document.getElementById(`gain-${freq}`);
+                if (gainValueDisplay) {
+                    gainValueDisplay.textContent = `${newGain} dB`;
+                }
+            });
+        }
+    }
+
+    // Play/Stop Button
+    const playStopBtn = document.getElementById('playStopBtn');
+    const noiseTypeSelect = document.getElementById('noiseTypeSelect');
+    let isPlaying = false;
+
+    playStopBtn.addEventListener('click', () => {
+        if (!isPlaying) {
+            const selectedNoise = noiseTypeSelect.value;
+            playNoise(selectedNoise);
+            playStopBtn.textContent = 'Stop';
+            isPlaying = true;
+        } else {
+            stopNoise();
+            playStopBtn.textContent = 'Play';
+            isPlaying = false;
+        }
+    });
+
+    // Handle Noise Type Selection and Apply Preset
+    noiseTypeSelect.addEventListener('change', (e) => {
+        const selectedNoise = e.target.value;
+        applyPreset(selectedNoise);
+        if (isPlaying) {
+            playNoise(selectedNoise);
+        }
+    });
+
+    // Apply Default Preset on Page Load
+    window.addEventListener('load', () => {
+        // Set default noise type to Brown Noise
+        noiseTypeSelect.value = 'brown';
+        applyPreset('brown');
+    });
+
+    // Handle Audio Context Resume on User Interaction (for some browsers)
+    document.body.addEventListener('click', () => {
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    });
+</script>
+</body>
+</html>
