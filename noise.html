@@ -14,6 +14,7 @@
             align-items: center;
             padding: 20px;
             min-height: 100vh;
+            margin: 0;
         }
 
         h1 {
@@ -32,6 +33,7 @@
 
         .preset-controls {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
             align-items: center;
             margin: 10px 0;
@@ -85,32 +87,45 @@
 
         .equalizer {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
             width: 100%;
             max-width: 800px;
             margin-top: 20px;
-            flex-wrap: wrap;
+        }
+
+        .eq-group {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        .eq-group-title {
+            font-size: 16px;
+            margin-bottom: 10px;
+            text-align: center;
+            color: #ffffff;
         }
 
         .eq-band {
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 50px;
-            position: relative;
-            margin: 10px;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .eq-band label {
+            margin-bottom: 5px;
+            font-size: 14px;
         }
 
         .eq-band input {
-            transform: rotate(-90deg);
-            margin-top: 30px;
-            width: 100px;
+            width: 80%;
             cursor: pointer;
         }
 
         .eq-band .gain-value {
-            position: absolute;
-            top: -25px;
+            margin-top: 5px;
             font-size: 12px;
             color: #e0e0e0;
         }
@@ -136,13 +151,14 @@
         }
 
         /* Responsive Design */
-        @media (max-width: 1024px) {
-            .equalizer {
-                justify-content: center;
+        @media (max-width: 600px) {
+            .preset-controls {
+                flex-direction: column;
             }
 
-            .eq-band {
-                margin: 10px;
+            .preset-controls select {
+                margin-right: 0;
+                margin-bottom: 10px;
             }
         }
     </style>
@@ -170,51 +186,45 @@
 </div>
 
 <div class="equalizer">
-    <!-- Define 9 frequency bands for the equalizer -->
-    <div class="eq-band">
-        <div class="gain-value" id="gain-31">0 dB</div>
-        <label>31Hz</label>
-        <input type="range" class="eq-slider" data-frequency="31" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-62">0 dB</div>
-        <label>62Hz</label>
-        <input type="range" class="eq-slider" data-frequency="62" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-125">0 dB</div>
-        <label>125Hz</label>
-        <input type="range" class="eq-slider" data-frequency="125" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-250">0 dB</div>
-        <label>250Hz</label>
-        <input type="range" class="eq-slider" data-frequency="250" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-500">0 dB</div>
-        <label>500Hz</label>
-        <input type="range" class="eq-slider" data-frequency="500" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-1000">0 dB</div>
-        <label>1kHz</label>
-        <input type="range" class="eq-slider" data-frequency="1000" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-2000">0 dB</div>
-        <label>2kHz</label>
-        <input type="range" class="eq-slider" data-frequency="2000" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-4000">0 dB</div>
-        <label>4kHz</label>
-        <input type="range" class="eq-slider" data-frequency="4000" min="-60" max="12" step="0.1" value="0">
-    </div>
-    <div class="eq-band">
-        <div class="gain-value" id="gain-8000">0 dB</div>
-        <label>8kHz</label>
-        <input type="range" class="eq-slider" data-frequency="8000" min="-60" max="12" step="0.1" value="0">
+    <!-- Grouped Equalizer Sliders -->
+    <div class="eq-group">
+        <div class="eq-group-title">Equalizer</div>
+        <!-- Define frequency bands for the equalizer -->
+        <div class="eq-band">
+            <label>125Hz</label>
+            <input type="range" class="eq-slider" data-frequency="125" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-125">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>250Hz</label>
+            <input type="range" class="eq-slider" data-frequency="250" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-250">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>500Hz</label>
+            <input type="range" class="eq-slider" data-frequency="500" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-500">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>1kHz</label>
+            <input type="range" class="eq-slider" data-frequency="1000" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-1000">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>2kHz</label>
+            <input type="range" class="eq-slider" data-frequency="2000" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-2000">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>4kHz</label>
+            <input type="range" class="eq-slider" data-frequency="4000" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-4000">0 dB</div>
+        </div>
+        <div class="eq-band">
+            <label>8kHz</label>
+            <input type="range" class="eq-slider" data-frequency="8000" min="-60" max="12" step="0.1" value="0">
+            <div class="gain-value" id="gain-8000">0 dB</div>
+        </div>
     </div>
 </div>
 
@@ -233,8 +243,6 @@
     // Define Preset Equalizer Settings
     const presets = {
         white: {
-            31: 0,
-            62: 0,
             125: 0,
             250: 0,
             500: 0,
@@ -244,8 +252,6 @@
             8000: 0
         },
         pink: {
-            31: 3,
-            62: 2,
             125: 1,
             250: 0,
             500: -1,
@@ -255,8 +261,6 @@
             8000: -5
         },
         deep_pink: {
-            31: 5,
-            62: 4,
             125: 3,
             250: 2,
             500: 1,
@@ -266,8 +270,6 @@
             8000: -3
         },
         brown: {
-            31: 6,
-            62: 4,
             125: 2,
             250: 0,
             500: -2,
@@ -277,8 +279,6 @@
             8000: -10
         },
         deep_brown: {
-            31: 8,
-            62: 6,
             125: 4,
             250: 2,
             500: 0,
@@ -288,8 +288,6 @@
             8000: -8
         },
         speech_blocker: {
-            31: 0,
-            62: 0,
             125: 3,
             250: 6,
             500: 6,
@@ -301,7 +299,7 @@
     };
 
     // Create Equalizer Bands
-    const frequencies = [31, 62, 125, 250, 500, 1000, 2000, 4000, 8000];
+    const frequencies = [125, 250, 500, 1000, 2000, 4000, 8000];
     const eqFilters = frequencies.map(freq => {
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'peaking';
@@ -325,9 +323,6 @@
     lowpassFilter.Q.value = 1;
     previousNode.connect(lowpassFilter);
     lowpassFilter.connect(audioCtx.destination);
-
-    // Connect to Destination
-    // previousNode.connect(audioCtx.destination); // Already connected via lowpassFilter
 
     // Volume Control
     const volumeSlider = document.getElementById('volumeSlider');
@@ -356,7 +351,7 @@
     });
 
     // Noise Generation Functions
-    function createWhiteNoise(bufferDuration = 30) { // 30 seconds buffer
+    function createWhiteNoise(bufferDuration = 60) { // Increased to 60 seconds
         const bufferSize = audioCtx.sampleRate * bufferDuration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -369,7 +364,7 @@
         return whiteNoise;
     }
 
-    function createPinkNoise(bufferDuration = 30) { // 30 seconds buffer
+    function createPinkNoise(bufferDuration = 60) { // Increased to 60 seconds
         const bufferSize = audioCtx.sampleRate * bufferDuration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const output = buffer.getChannelData(0);
@@ -395,7 +390,7 @@
         return pinkNoise;
     }
 
-    function createBrownNoise(bufferDuration = 30) { // 30 seconds buffer
+    function createBrownNoise(bufferDuration = 60) { // Increased to 60 seconds
         const bufferSize = audioCtx.sampleRate * bufferDuration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
@@ -503,6 +498,13 @@
     // Handle Audio Context Resume on User Interaction (for some browsers)
     document.body.addEventListener('click', () => {
         if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    });
+
+    // Handle visibility change to resume audio context
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
     });
