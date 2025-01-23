@@ -486,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: 'snow',
         modules: {
             toolbar: [
-                ['bold', 'italic', 'underline'],
+                ['bold', 'italic', 'underline', 'strike'],
                 [{ 'list': 'ordered'}, { 'list': 'bullet' }],
                 ['clean']
             ]
