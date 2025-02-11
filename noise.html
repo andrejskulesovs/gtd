@@ -350,28 +350,48 @@
         });
     });
 
-    // Noise Generation Functions
-    function createWhiteNoise(bufferDuration = 60) { // Increased to 60 seconds
+    // Noise Generation Functions with Seamless Looping
+    function createNoiseBuffer(bufferDuration = 120) { // 2 minutes buffer
         const bufferSize = audioCtx.sampleRate * bufferDuration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
+        
+        // Overlap size for seamless transition (50ms)
+        const overlapSize = Math.floor(audioCtx.sampleRate * 0.05);
+        
+        return { buffer, data, overlapSize };
+    }
+
+    function createWhiteNoise(bufferDuration = 120) {
+        const { buffer, data, overlapSize } = createNoiseBuffer(bufferDuration);
+        
+        // Generate white noise
+        for (let i = 0; i < data.length; i++) {
             data[i] = Math.random() * 2 - 1;
         }
+        
+        // Ensure seamless loop by matching start and end with crossfade
+        for (let i = 0; i < overlapSize; i++) {
+            const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
+            const fadeIn = Math.sin((i / overlapSize) * Math.PI * 0.5);
+            const idx = data.length - overlapSize + i;
+            data[idx] = data[idx] * fadeOut + data[i] * fadeIn;
+        }
+        
         const whiteNoise = audioCtx.createBufferSource();
         whiteNoise.buffer = buffer;
         whiteNoise.loop = true;
         return whiteNoise;
     }
 
-    function createPinkNoise(bufferDuration = 60) { // Increased to 60 seconds
-        const bufferSize = audioCtx.sampleRate * bufferDuration;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const output = buffer.getChannelData(0);
-
+    function createPinkNoise(bufferDuration = 120) {
+        const { buffer, data: output, overlapSize } = createNoiseBuffer(bufferDuration);
+        
         let b0, b1, b2, b3, b4, b5, b6;
         b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-        for (let i = 0; i < bufferSize; i++) {
+        
+        // Generate pink noise
+        for (let i = 0; i < output.length; i++) {
             const white = Math.random() * 2 - 1;
             b0 = 0.99886 * b0 + white * 0.0555179;
             b1 = 0.99332 * b1 + white * 0.0750759;
@@ -380,54 +400,81 @@
             b4 = 0.55000 * b4 + white * 0.5329522;
             b5 = -0.7616 * b5 - white * 0.0168980;
             output[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-            output[i] *= 0.11; // (roughly) compensate for gain
+            output[i] *= 0.11;
             b6 = white * 0.115926;
         }
-
+        
+        // Apply seamless loop transition
+        for (let i = 0; i < overlapSize; i++) {
+            const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
+            const fadeIn = Math.sin((i / overlapSize) * Math.PI * 0.5);
+            const idx = output.length - overlapSize + i;
+            output[idx] = output[idx] * fadeOut + output[i] * fadeIn;
+        }
+        
         const pinkNoise = audioCtx.createBufferSource();
         pinkNoise.buffer = buffer;
         pinkNoise.loop = true;
         return pinkNoise;
     }
 
-    function createBrownNoise(bufferDuration = 60) { // Increased to 60 seconds
-        const bufferSize = audioCtx.sampleRate * bufferDuration;
-        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
+    function createBrownNoise(bufferDuration = 120) {
+        const { buffer, data, overlapSize } = createNoiseBuffer(bufferDuration);
+        
         let lastOut = 0.0;
-
-        for (let i = 0; i < bufferSize; i++) {
+        
+        // Generate brown noise
+        for (let i = 0; i < data.length; i++) {
             const white = Math.random() * 2 - 1;
             lastOut = (lastOut + (0.02 * white)) / 1.02;
-            data[i] = lastOut * 3.5; // (roughly) compensate for gain
+            data[i] = lastOut * 3.5;
         }
-
+        
+        // Ensure seamless loop transition
+        const startValue = data[0];
+        const endValue = data[data.length - 1];
+        
+        for (let i = 0; i < overlapSize; i++) {
+            const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
+            const fadeIn = Math.sin((i / overlapSize) * Math.PI * 0.5);
+            const idx = data.length - overlapSize + i;
+            data[idx] = data[idx] * fadeOut + startValue * fadeIn;
+        }
+        
         const brownNoise = audioCtx.createBufferSource();
         brownNoise.buffer = buffer;
         brownNoise.loop = true;
         return brownNoise;
     }
 
-    // Play Noise
+    // Cached noise buffers
+    const noiseBuffers = new Map();
+
+    // Play Noise with buffer caching
     function playNoise(noiseType) {
         stopNoise();
 
-        if (noiseType === 'pink') {
-            noiseSource = createPinkNoise();
-        } else if (noiseType === 'deep_pink') {
-            noiseSource = createPinkNoise();
-        } else if (noiseType === 'brown') {
-            noiseSource = createBrownNoise();
-        } else if (noiseType === 'deep_brown') {
-            noiseSource = createBrownNoise();
-        } else if (noiseType === 'white') {
-            noiseSource = createWhiteNoise();
-        } else if (noiseType === 'speech_blocker') {
-            noiseSource = createPinkNoise(); // Using pink noise as base
-        } else {
-            noiseSource = createWhiteNoise();
+        // Create or get cached noise source
+        if (!noiseBuffers.has(noiseType)) {
+            let source;
+            if (noiseType === 'pink' || noiseType === 'deep_pink' || noiseType === 'speech_blocker') {
+                source = createPinkNoise();
+            } else if (noiseType === 'brown' || noiseType === 'deep_brown') {
+                source = createBrownNoise();
+            } else {
+                source = createWhiteNoise();
+            }
+            noiseBuffers.set(noiseType, source.buffer);
         }
 
+        noiseSource = audioCtx.createBufferSource();
+        noiseSource.buffer = noiseBuffers.get(noiseType);
+        noiseSource.loop = true;
+        
+        // Add small fade in to prevent clicks
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(volumeSlider.value, audioCtx.currentTime + 0.1);
+        
         noiseSource.connect(gainNode);
         noiseSource.start(0);
     }
