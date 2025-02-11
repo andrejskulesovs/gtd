@@ -3,23 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <title>Noise Generator</title>
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveD0iMCAwIDY0IDY0Ij48cmVjdCB4PSIxMCIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3Qg eD0iMjYiIHk9IjE0IiB3aWR0aD0iOCIgaGVpZ2h0PSIzNiIgZmlsbD0iI2ZmZmZmZiIvPjx yZWN0IHg9IjQyIiB5PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0OCIgZmlsbD0iI2ZmZmZmZiIvPjwvc3ZnPg==" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2NCIgaGVpZ2h0PSI2NCIgdmlld0JveG0iMCAwIDY0IDY0Ij48cmVjdCB4PSIxMCIgeT0iMjAiIHdpZHRoPSI4IiBoZWlnaHQ9IjI0IiBmaWxsPSIjZmZmZmZmIi8+PHJlY3Qg eD0iMjYiIHk9IjE0IiB3aWR0aD0iOCIgaGVpZ2h0PSIzNiIgZmlsbD0iI2ZmZmZmZiIvPjx yZWN0IHg9IjQyIiB5PSI4IiB3aWR0aD0iOCIgaGVpZ2h0PSI0OCIgZmlsbD0iI2ZmZmZmZiIvPjwvc3ZnPg==" />
     <style>
+        :root {
+            --bg-primary: #121212;
+            --bg-surface: #1E1E1E;
+            --bg-elevated: #2D2D2D;
+            --accent-primary: #4c77af;
+            --accent-hover: #4563a0;
+            --text-primary: #FFFFFF;
+            --text-secondary: #E0E0E0;
+            --text-tertiary: #AAAAAA;
+        }
+
         body {
-            background-color: #121212;
-            color: #e0e0e0;
-            font-family: Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-secondary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             padding: 20px;
             min-height: 100vh;
             margin: 0;
+            line-height: 1.5;
         }
 
         h1 {
             margin-bottom: 20px;
-            color: #ffffff;
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 2rem;
         }
 
         .controls {
@@ -29,6 +43,10 @@
             width: 100%;
             max-width: 800px;
             margin-bottom: 30px;
+            background: var(--bg-surface);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .preset-controls {
@@ -38,33 +56,41 @@
             align-items: center;
             margin: 10px 0;
             width: 100%;
+            gap: 16px;
         }
 
         .preset-controls select {
-            background-color: #333333;
-            color: #e0e0e0;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            margin-right: 20px;
+            background-color: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 20px;
+            border-radius: 8px;
             font-size: 16px;
             cursor: pointer;
+            transition: all 0.2s ease;
+            min-width: 200px;
+        }
+
+        .preset-controls select:hover {
+            border-color: var(--accent-primary);
         }
 
         .preset-controls button {
-            background-color: #333333;
+            background-color: var(--accent-primary);
             border: none;
-            color: #e0e0e0;
-            padding: 10px 20px;
-            margin: 0;
+            color: white;
+            padding: 12px 24px;
             cursor: pointer;
-            border-radius: 5px;
-            transition: background-color 0.3s;
+            border-radius: 8px;
+            transition: all 0.2s ease;
             font-size: 16px;
+            font-weight: 500;
+            min-width: 120px;
         }
 
         .preset-controls button:hover {
-            background-color: #555555;
+            background-color: var(--accent-hover);
+            transform: translateY(-1px);
         }
 
         .slider-container {
@@ -72,17 +98,43 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            margin: 10px 0;
+            margin: 20px 0;
         }
 
         .slider-container label {
-            margin-bottom: 5px;
-            text-align: center;
+            margin-bottom: 8px;
             font-size: 14px;
+            color: var(--text-tertiary);
         }
 
-        .slider-container input {
+        /* Modern Range Input Styling */
+        input[type="range"] {
+            -webkit-appearance: none;
             width: 80%;
+            height: 4px;
+            background: var(--bg-elevated);
+            border-radius: 2px;
+            outline: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid var(--bg-primary);
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--accent-hover);
+            transform: scale(1.1);
         }
 
         .equalizer {
@@ -91,7 +143,10 @@
             align-items: center;
             width: 100%;
             max-width: 800px;
-            margin-top: 20px;
+            background: var(--bg-surface);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .eq-group {
@@ -100,10 +155,47 @@
         }
 
         .eq-group-title {
-            font-size: 16px;
-            margin-bottom: 10px;
+            font-size: 18px;
+            margin-bottom: 20px;
             text-align: center;
-            color: #ffffff;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .frequency-scale {
+            display: flex;
+            justify-content: space-between;
+            width: 80%;
+            margin: 0 auto 20px;
+            padding: 0 10px;
+            color: var(--text-tertiary);
+            font-size: 12px;
+            position: relative;
+        }
+
+        .frequency-scale::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -4px;
+            height: 1px;
+            background: var(--bg-elevated);
+        }
+
+        .frequency-scale span {
+            position: relative;
+            padding-bottom: 12px;
+        }
+
+        .frequency-scale span::after {
+            content: '';
+            position: absolute;
+            height: 4px;
+            width: 1px;
+            background: var(--text-tertiary);
+            bottom: 0;
+            left: 50%;
         }
 
         .eq-band {
@@ -111,29 +203,61 @@
             flex-direction: column;
             align-items: center;
             width: 100%;
-            margin: 10px 0;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .eq-band::before {
+            content: '';
+            position: absolute;
+            left: 10%;
+            right: 10%;
+            height: 1px;
+            background: var(--bg-elevated);
+            top: 50%;
+            z-index: 0;
         }
 
         .eq-band label {
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 14px;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            position: relative;
+            background: var(--bg-surface);
+            padding: 0 8px;
+            z-index: 1;
         }
 
         .eq-band input {
             width: 80%;
-            cursor: pointer;
+            margin: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .eq-band .gain-value {
-            margin-top: 5px;
-            font-size: 12px;
-            color: #e0e0e0;
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--accent-primary);
+            font-weight: 500;
+            transition: all 0.2s ease;
+            position: relative;
+            background: var(--bg-surface);
+            padding: 0 8px;
+            z-index: 1;
+        }
+
+        .eq-band input:active + .gain-value {
+            color: var(--accent-hover);
+            transform: scale(1.1);
         }
 
         footer {
             margin-top: auto;
-            color: #777777;
+            color: var(--text-tertiary);
             font-size: 12px;
+            padding: 20px 0;
         }
 
         /* Scrollbar Styling */
@@ -142,23 +266,34 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: #1e1e1e;
+            background: var(--bg-surface);
         }
 
         ::-webkit-scrollbar-thumb {
-            background-color: #555555;
+            background-color: var(--bg-elevated);
             border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: var(--accent-primary);
         }
 
         /* Responsive Design */
         @media (max-width: 600px) {
             .preset-controls {
                 flex-direction: column;
+                gap: 12px;
             }
 
-            .preset-controls select {
-                margin-right: 0;
-                margin-bottom: 10px;
+            .preset-controls select,
+            .preset-controls button {
+                width: 100%;
+                margin: 0;
+            }
+
+            .controls,
+            .equalizer {
+                padding: 16px;
             }
         }
     </style>
@@ -186,43 +321,48 @@
 </div>
 
 <div class="equalizer">
-    <!-- Grouped Equalizer Sliders -->
     <div class="eq-group">
         <div class="eq-group-title">Equalizer</div>
-        <!-- Define frequency bands for the equalizer -->
+        <div class="frequency-scale">
+            <span>20Hz</span>
+            <span>100Hz</span>
+            <span>1kHz</span>
+            <span>10kHz</span>
+            <span>20kHz</span>
+        </div>
         <div class="eq-band">
             <label>125Hz</label>
-            <input type="range" class="eq-slider" data-frequency="125" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="125" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-125">0 dB</div>
         </div>
         <div class="eq-band">
             <label>250Hz</label>
-            <input type="range" class="eq-slider" data-frequency="250" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="250" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-250">0 dB</div>
         </div>
         <div class="eq-band">
             <label>500Hz</label>
-            <input type="range" class="eq-slider" data-frequency="500" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="500" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-500">0 dB</div>
         </div>
         <div class="eq-band">
             <label>1kHz</label>
-            <input type="range" class="eq-slider" data-frequency="1000" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="1000" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-1000">0 dB</div>
         </div>
         <div class="eq-band">
             <label>2kHz</label>
-            <input type="range" class="eq-slider" data-frequency="2000" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="2000" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-2000">0 dB</div>
         </div>
         <div class="eq-band">
             <label>4kHz</label>
-            <input type="range" class="eq-slider" data-frequency="4000" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="4000" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-4000">0 dB</div>
         </div>
         <div class="eq-band">
             <label>8kHz</label>
-            <input type="range" class="eq-slider" data-frequency="8000" min="-60" max="12" step="0.1" value="0">
+            <input type="range" class="eq-slider" data-frequency="8000" min="-12" max="12" step="0.1" value="0">
             <div class="gain-value" id="gain-8000">0 dB</div>
         </div>
     </div>
@@ -240,7 +380,7 @@
     let noiseSource = null;
     let gainNode = audioCtx.createGain();
 
-    // Define Preset Equalizer Settings
+    // Define Preset Equalizer Settings with adjusted ranges
     const presets = {
         white: {
             125: 0,
@@ -252,59 +392,59 @@
             8000: 0
         },
         pink: {
-            125: 1,
-            250: 0,
-            500: -1,
-            1000: -2,
+            125: 3,
+            250: 1.5,
+            500: 0,
+            1000: -1.5,
             2000: -3,
-            4000: -4,
-            8000: -5
+            4000: -4.5,
+            8000: -6
         },
         deep_pink: {
-            125: 3,
-            250: 2,
-            500: 1,
-            1000: 0,
-            2000: -1,
-            4000: -2,
+            125: 6,
+            250: 4.5,
+            500: 3,
+            1000: 1.5,
+            2000: 0,
+            4000: -1.5,
             8000: -3
         },
         brown: {
-            125: 2,
-            250: 0,
-            500: -2,
-            1000: -4,
+            125: 6,
+            250: 3,
+            500: 0,
+            1000: -3,
             2000: -6,
-            4000: -8,
-            8000: -10
+            4000: -9,
+            8000: -12
         },
         deep_brown: {
-            125: 4,
-            250: 2,
-            500: 0,
-            1000: -2,
-            2000: -4,
+            125: 9,
+            250: 6,
+            500: 3,
+            1000: 0,
+            2000: -3,
             4000: -6,
-            8000: -8
+            8000: -9
         },
         speech_blocker: {
-            125: 3,
-            250: 6,
-            500: 6,
-            1000: 6,
-            2000: 6,
-            4000: 6,
-            8000: 6
+            125: 6,
+            250: 9,
+            500: 9,
+            1000: 9,
+            2000: 9,
+            4000: 9,
+            8000: 9
         }
     };
 
-    // Create Equalizer Bands
+    // Create Equalizer Bands with logarithmic frequency distribution
     const frequencies = [125, 250, 500, 1000, 2000, 4000, 8000];
     const eqFilters = frequencies.map(freq => {
         const filter = audioCtx.createBiquadFilter();
         filter.type = 'peaking';
         filter.frequency.value = freq;
-        filter.Q.value = 1;
+        filter.Q.value = 1.4; // Slightly sharper Q for better frequency separation
         filter.gain.value = 0;
         return filter;
     });
@@ -319,26 +459,35 @@
     // Add Lowpass Filter to Cut Off Above 8kHz
     const lowpassFilter = audioCtx.createBiquadFilter();
     lowpassFilter.type = 'lowpass';
-    lowpassFilter.frequency.value = 8000; // 8kHz cutoff
+    lowpassFilter.frequency.value = 8000;
     lowpassFilter.Q.value = 1;
     previousNode.connect(lowpassFilter);
     lowpassFilter.connect(audioCtx.destination);
 
-    // Volume Control
+    // Volume Control with visual feedback
     const volumeSlider = document.getElementById('volumeSlider');
     gainNode.gain.value = volumeSlider.value;
     volumeSlider.addEventListener('input', (e) => {
-        gainNode.gain.value = e.target.value;
+        const value = e.target.value;
+        gainNode.gain.value = value;
+        // Update slider background
+        const percent = (value - e.target.min) / (e.target.max - e.target.min) * 100;
+        e.target.style.background = `linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) ${percent}%, var(--bg-elevated) ${percent}%, var(--bg-elevated) 100%)`;
     });
 
-    // Equalizer Sliders and Gain Value Displays
+    // Initialize volume slider background
+    const initialVolume = (volumeSlider.value - volumeSlider.min) / (volumeSlider.max - volumeSlider.min) * 100;
+    volumeSlider.style.background = `linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) ${initialVolume}%, var(--bg-elevated) ${initialVolume}%, var(--bg-elevated) 100%)`;
+
+    // Equalizer Sliders with visual feedback
     const eqSliders = document.querySelectorAll('.eq-slider');
     eqSliders.forEach(slider => {
         const freq = slider.getAttribute('data-frequency');
         const gainValueDisplay = document.getElementById(`gain-${freq}`);
 
-        // Initialize display
+        // Initialize display and slider background
         gainValueDisplay.textContent = `${slider.value} dB`;
+        updateSliderBackground(slider);
 
         slider.addEventListener('input', (e) => {
             const gain = e.target.value;
@@ -347,30 +496,34 @@
                 filter.gain.value = gain;
             }
             gainValueDisplay.textContent = `${gain} dB`;
+            updateSliderBackground(e.target);
         });
     });
 
+    function updateSliderBackground(slider) {
+        const min = parseFloat(slider.min);
+        const max = parseFloat(slider.max);
+        const value = parseFloat(slider.value);
+        const percent = (value - min) / (max - min) * 100;
+        slider.style.background = `linear-gradient(to right, var(--accent-primary) 0%, var(--accent-primary) ${percent}%, var(--bg-elevated) ${percent}%, var(--bg-elevated) 100%)`;
+    }
+
     // Noise Generation Functions with Seamless Looping
-    function createNoiseBuffer(bufferDuration = 120) { // 2 minutes buffer
+    function createNoiseBuffer(bufferDuration = 120) {
         const bufferSize = audioCtx.sampleRate * bufferDuration;
         const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
         const data = buffer.getChannelData(0);
-        
-        // Overlap size for seamless transition (50ms)
         const overlapSize = Math.floor(audioCtx.sampleRate * 0.05);
-        
         return { buffer, data, overlapSize };
     }
 
     function createWhiteNoise(bufferDuration = 120) {
         const { buffer, data, overlapSize } = createNoiseBuffer(bufferDuration);
         
-        // Generate white noise
         for (let i = 0; i < data.length; i++) {
             data[i] = Math.random() * 2 - 1;
         }
         
-        // Ensure seamless loop by matching start and end with crossfade
         for (let i = 0; i < overlapSize; i++) {
             const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
             const fadeIn = Math.sin((i / overlapSize) * Math.PI * 0.5);
@@ -387,10 +540,8 @@
     function createPinkNoise(bufferDuration = 120) {
         const { buffer, data: output, overlapSize } = createNoiseBuffer(bufferDuration);
         
-        let b0, b1, b2, b3, b4, b5, b6;
-        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
         
-        // Generate pink noise
         for (let i = 0; i < output.length; i++) {
             const white = Math.random() * 2 - 1;
             b0 = 0.99886 * b0 + white * 0.0555179;
@@ -404,7 +555,6 @@
             b6 = white * 0.115926;
         }
         
-        // Apply seamless loop transition
         for (let i = 0; i < overlapSize; i++) {
             const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
             const fadeIn = Math.sin((i / overlapSize) * Math.PI * 0.5);
@@ -423,16 +573,13 @@
         
         let lastOut = 0.0;
         
-        // Generate brown noise
         for (let i = 0; i < data.length; i++) {
             const white = Math.random() * 2 - 1;
             lastOut = (lastOut + (0.02 * white)) / 1.02;
             data[i] = lastOut * 3.5;
         }
         
-        // Ensure seamless loop transition
         const startValue = data[0];
-        const endValue = data[data.length - 1];
         
         for (let i = 0; i < overlapSize; i++) {
             const fadeOut = Math.cos((i / overlapSize) * Math.PI * 0.5);
@@ -454,7 +601,6 @@
     function playNoise(noiseType) {
         stopNoise();
 
-        // Create or get cached noise source
         if (!noiseBuffers.has(noiseType)) {
             let source;
             if (noiseType === 'pink' || noiseType === 'deep_pink' || noiseType === 'speech_blocker') {
@@ -471,7 +617,6 @@
         noiseSource.buffer = noiseBuffers.get(noiseType);
         noiseSource.loop = true;
         
-        // Add small fade in to prevent clicks
         gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
         gainNode.gain.linearRampToValueAtTime(volumeSlider.value, audioCtx.currentTime + 0.1);
         
@@ -479,7 +624,6 @@
         noiseSource.start(0);
     }
 
-    // Stop Noise
     function stopNoise() {
         if (noiseSource) {
             noiseSource.stop();
@@ -504,6 +648,7 @@
                 if (gainValueDisplay) {
                     gainValueDisplay.textContent = `${newGain} dB`;
                 }
+                updateSliderBackground(slider);
             });
         }
     }
@@ -537,19 +682,17 @@
 
     // Apply Default Preset on Page Load
     window.addEventListener('load', () => {
-        // Set default noise type to Brown Noise
         noiseTypeSelect.value = 'brown';
         applyPreset('brown');
     });
 
-    // Handle Audio Context Resume on User Interaction (for some browsers)
+    // Handle Audio Context Resume
     document.body.addEventListener('click', () => {
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
     });
 
-    // Handle visibility change to resume audio context
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && audioCtx.state === 'suspended') {
             audioCtx.resume();
