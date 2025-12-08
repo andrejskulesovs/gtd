@@ -1,44 +1,64 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>GTD Task Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
+
 <body>
-    <div id="loginContainer">
-        <h2>Login</h2>
-        <input type="email" id="emailInput" placeholder="Email">
-        <input type="password" id="passwordInput" placeholder="Password">
-        <button onclick="login()">Login</button>
-        <button onclick="register()">Register</button>
+    <div id="loginContainer" class="login-container card">
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Login to your GTD Workspace</p>
+        <div class="input-group">
+            <input type="email" id="emailInput" placeholder="Email Address">
+        </div>
+        <div class="input-group">
+            <input type="password" id="passwordInput" placeholder="Password">
+        </div>
+        <div class="auth-buttons">
+            <button onclick="login()" class="btn primary-btn full-width">Login</button>
+            <button onclick="register()" class="btn secondary-btn full-width">Register</button>
+        </div>
     </div>
 
-    <div id="appContainer" style="display: none;" class="container">
-        <div class="header">
-            <button onclick="addNewTask()">Add New Task</button>
-            <button onclick="openProjectModal()">Edit Projects</button>
-            <div>
-                <label for="projectFilter">Filter:</label>
-                <select id="projectFilter" onchange="applyFilter()">
-                    <option value="">All Projects</option>
-                </select>
+    <div id="appContainer" style="display: none;" class="app-container">
+        <header class="app-header">
+            <div class="header-controls">
+                <button onclick="addNewTask()" class="btn primary-btn">+ Add New Task</button>
+                <button onclick="openProjectModal()" class="btn secondary-btn">Edit Projects</button>
             </div>
-            <div>
-                <label for="viewSelector">View:</label>
-                <select id="viewSelector">
-                    <option value="all">All Columns</option>
-                    <option value="custom">Custom</option>
-                </select>
-            </div>
-            <div id="columnSelector" style="display: none;"></div>
-            <button onclick="logout()">Logout</button>
-        </div>
 
-        <div id="projectWarnings"></div>
-        <div id="board" class="board"></div>
+            <div class="header-filters">
+                <div class="filter-group">
+                    <label for="projectFilter">Filter Project</label>
+                    <select id="projectFilter" onchange="applyFilter()">
+                        <option value="">All Projects</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label for="viewSelector">View</label>
+                    <select id="viewSelector">
+                        <option value="all">Detailed View</option>
+                        <option value="custom">Custom Columns</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="columnSelector" class="column-selector" style="display: none;"></div>
+
+            <button onclick="logout()" class="btn icon-btn logout-btn" title="Logout">Logout</button>
+        </header>
+
+        <div id="projectWarnings" class="warnings-container"></div>
+        <div id="board" class="board-container"></div>
     </div>
 
     <div id="taskModal" class="modal">
@@ -49,13 +69,13 @@
                 <input type="hidden" id="taskId">
                 <label for="taskName">Name:</label>
                 <input type="text" id="taskName" required>
-                
+
                 <label for="editor-container">Description:</label>
                 <div id="editor-container"></div>
-                
+
                 <label for="taskProject">Project:</label>
                 <select id="taskProject"></select>
-                
+
                 <label for="taskStatus">Status:</label>
                 <select id="taskStatus">
                     <option value="In">In</option>
@@ -67,17 +87,17 @@
                     <option value="Refs">Refs</option>
                     <option value="Archive">Archive</option>
                 </select>
-                
+
                 <label for="taskDate">Date:</label>
                 <input type="text" id="taskDate">
-                
+
                 <label for="taskPomodoro">Pomodoro:</label>
                 <div class="pomodoro-control">
                     <button type="button" onclick="decrementPomodoro()">-</button>
                     <input type="number" id="taskPomodoro" value="0" min="0">
                     <button type="button" onclick="incrementPomodoro()">+</button>
                 </div>
-                
+
                 <div class="form-buttons">
                     <button type="button" class="delete-btn" onclick="deleteTask()">Delete Task</button>
                     <button type="button" class="cancel-btn" onclick="closeModal('taskModal')">Cancel</button>
@@ -94,10 +114,10 @@
             <form id="projectForm">
                 <label for="projectName">Name:</label>
                 <input type="text" id="projectName" required>
-                
+
                 <label for="projectColor">Color:</label>
                 <input type="color" id="projectColor" required>
-                
+
                 <button type="submit" class="save-btn">Add Project</button>
             </form>
             <ul id="projectList"></ul>
@@ -111,4 +131,5 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="script.js"></script>
 </body>
+
 </html>

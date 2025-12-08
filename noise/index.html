@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Sanctuary | Noise Generator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    <div class="noise-overlay"></div>
+    
+    <main class="app-container">
+        <header>
+            <h1>Sonic Sanctuary</h1>
+            <p>Focus. Relax. Block the world.</p>
+        </header>
+
+        <section class="visualizer-container">
+            <canvas id="visualizer"></canvas>
+            <div class="status-indicator" id="status-indicator">OFF</div>
+        </section>
+
+        <section class="controls-wrapper glass-panel">
+            <div class="presets">
+                <h2>Presets</h2>
+                <div class="preset-grid">
+                    <button class="preset-btn" data-type="white">
+                        <span class="icon">⚪</span>
+                        <span class="label">White</span>
+                    </button>
+                    <button class="preset-btn" data-type="pink">
+                        <span class="icon">🌸</span>
+                        <span class="label">Pink</span>
+                    </button>
+                    <button class="preset-btn" data-type="brown">
+                        <span class="icon">☕</span>
+                        <span class="label">Brown</span>
+                    </button>
+                    <button class="preset-btn" data-type="speech_blocker">
+                        <span class="icon">🛡️</span>
+                        <span class="label">Speech Blocker</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sliders">
+                <div class="slider-group">
+                    <label for="volume">Master Volume</label>
+                    <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
+                </div>
+                
+                <div class="customizer hidden" id="customizer-panel">
+                    <h3>Fine Tune</h3>
+                    <div class="slider-group">
+                        <label for="low-pass">Muffle (Low Pass)</label>
+                        <input type="range" id="low-pass" min="200" max="20000" step="100" value="20000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="play-control">
+                <button id="play-pause" class="primary-btn">
+                    <span class="play-icon">▶</span>
+                    Start
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

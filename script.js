@@ -121,52 +121,53 @@ function hideColumn(status) {
 
 function renderBoard() {
     checkProjectWarnings();
-    
+
     const board = document.getElementById('board');
     board.innerHTML = '';
-    
+
     statuses.forEach(status => {
         if (!selectedColumns.has(status)) return;
-        
+
         const column = document.createElement('div');
         column.className = 'column';
-        
+
+        const statusTasks = tasks.filter(task =>
+            task.status === status &&
+            (!currentProjectFilter || task.project === currentProjectFilter || (!task.project && currentProjectFilter === ''))
+        );
+
         const columnHeader = document.createElement('div');
         columnHeader.className = 'column-header';
         columnHeader.innerHTML = `
-            <h2>${status}</h2>
+            <h2>${status} <span style="font-size:0.8em; opacity:0.6; margin-left:8px;">${statusTasks.length}</span></h2>
             <div class="column-controls">
-                ${status === 'Archive' ? 
-                    '<button class="clear-archive-btn" onclick="clearArchive()">Clear Archive</button>' : 
-                    ''
-                }
+                ${status === 'Archive' ?
+                '<button class="clear-archive-btn btn delete-btn" style="padding: 4px 8px; font-size: 0.7em;" onclick="clearArchive()">Clear</button>' :
+                ''
+            }
                 <button class="hide-column-btn" onclick="hideColumn('${status}')" title="Hide Column">
-                    <svg viewBox="0 0 24 24" width="14" height="14">
-                        <path fill="currentColor" d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M1 1l22 22"></path>
+                        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
                     </svg>
                 </button>
             </div>
         `;
-        
+
         column.appendChild(columnHeader);
-        
+
         const columnContent = document.createElement('div');
         columnContent.className = 'column-content';
         column.appendChild(columnContent);
-        
+
         column.ondragover = allowDrop;
         column.ondrop = (event) => drop(event, status);
-        
-        const statusTasks = tasks.filter(task => 
-            task.status === status && 
-            (!currentProjectFilter || task.project === currentProjectFilter || (!task.project && currentProjectFilter === ''))
-        );
-        
+
         statusTasks.forEach(task => {
             const taskCard = createTaskCard(task);
             columnContent.appendChild(taskCard);
         });
-        
+
         board.appendChild(column);
     });
 }
@@ -189,36 +190,52 @@ function createTaskCard(task) {
     card.onclick = () => openTaskModal(task);
     card.id = task.id;
     const project = projects.find(p => p.name === task.project);
-    const backgroundColor = project ? project.color : '#ffffff';
-    const textColor = getContrastColor(backgroundColor);
-    
+    const backgroundColor = project ? project.color : 'transparent';
+    const textColor = project ? getContrastColor(backgroundColor) : 'inherit';
+    const projectStyle = project ? `background-color: ${backgroundColor}; color: ${textColor};` : 'border: 1px solid var(--border-color); color: var(--text-secondary);';
+
     let dateHtml = '';
     if (task.date) {
         const taskDate = new Date(task.date);
         const isOverdue = taskDate < new Date() && task.status !== 'Done';
-        dateHtml = `<div class="date ${isOverdue ? 'overdue' : ''}">${formatDate(taskDate)}</div>`;
+        dateHtml = `<div class="task-date ${isOverdue ? 'overdue' : ''}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            ${formatDate(taskDate)}
+        </div>`;
     }
-    
+
     let pomodoroHtml = '';
     if (task.pomodoro && task.pomodoro > 0) {
-        pomodoroHtml = `<div class="pomodoro">Pomodoro: ${task.pomodoro}</div>`;
+        pomodoroHtml = `<div class="task-pomodoro" title="Pomodoro Sessions">${task.pomodoro} 🍅</div>`;
     }
-    
+
+    let projectHtml = '';
+    if (task.project) {
+        projectHtml = `<div class="task-project" style="${projectStyle}">${task.project}</div>`;
+    }
+
     card.innerHTML = `
-        <div><strong>${task.name}</strong></div>
-        ${task.project ? `<div class="project" style="background-color: ${backgroundColor}; color: ${textColor};">${task.project}</div>` : ''}
-        ${dateHtml}
-        ${pomodoroHtml}
+        <div class="task-title">${task.name}</div>
+        <div class="task-meta">
+            ${projectHtml}
+            ${dateHtml}
+            ${pomodoroHtml}
+        </div>
     `;
     return card;
 }
 
 function getContrastColor(hexcolor) {
     hexcolor = hexcolor.replace("#", "");
-    var r = parseInt(hexcolor.substr(0,2),16);
-    var g = parseInt(hexcolor.substr(2,2),16);
-    var b = parseInt(hexcolor.substr(4,2),16);
-    var yiq = ((r*299)+(g*587)+(b*114))/1000;
+    var r = parseInt(hexcolor.substr(0, 2), 16);
+    var g = parseInt(hexcolor.substr(2, 2), 16);
+    var b = parseInt(hexcolor.substr(4, 2), 16);
+    var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
     return (yiq >= 128) ? 'black' : 'white';
 }
 
@@ -231,7 +248,7 @@ function openTaskModal(task = null) {
     const form = document.getElementById('taskForm');
     const deleteBtn = document.querySelector('.delete-btn');
     const projectSelect = document.getElementById('taskProject');
-    
+
     projectSelect.innerHTML = '<option value="">No Project</option>';
     projects.forEach(project => {
         const option = document.createElement('option');
@@ -276,7 +293,7 @@ function parseDate(dateString) {
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
 }
 
-document.getElementById('taskForm').onsubmit = function(e) {
+document.getElementById('taskForm').onsubmit = function (e) {
     e.preventDefault();
     const taskId = document.getElementById('taskId').value;
     const taskDate = document.getElementById('taskDate').value;
@@ -319,7 +336,7 @@ function openProjectModal() {
     modal.style.display = 'block';
 }
 
-document.getElementById('projectForm').onsubmit = function(e) {
+document.getElementById('projectForm').onsubmit = function (e) {
     e.preventDefault();
     const projectName = document.getElementById('projectName').value;
     const projectColor = document.getElementById('projectColor').value;
@@ -348,7 +365,7 @@ function renderProjectList() {
 function deleteProject(projectName) {
     if (confirm(`Are you sure you want to delete project "${projectName}"?`)) {
         projects = projects.filter(p => p.name !== projectName);
-        tasks = tasks.map(t => t.project === projectName ? {...t, project: null} : t);
+        tasks = tasks.map(t => t.project === projectName ? { ...t, project: null } : t);
         saveProjects();
         saveTasks();
         renderProjectList();
@@ -398,13 +415,13 @@ function populateProjectFilter() {
         option.textContent = project.name;
         projectFilter.appendChild(option);
     });
-    
+
     if (projects.some(p => p.name === currentSelection) || currentSelection === '') {
         projectFilter.value = currentSelection;
     } else {
         projectFilter.value = '';
     }
-    
+
     currentProjectFilter = projectFilter.value;
 }
 
@@ -466,9 +483,9 @@ function checkProjectWarnings() {
     warningsContainer.innerHTML = '';
 
     const activeStatuses = ['Todo', 'InProgress'];
-    
+
     projects.forEach(project => {
-        const hasActiveTasks = tasks.some(task => 
+        const hasActiveTasks = tasks.some(task =>
             task.project === project.name && activeStatuses.includes(task.status)
         );
 
@@ -481,13 +498,13 @@ function checkProjectWarnings() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     quill = new Quill('#editor-container', {
         theme: 'snow',
         modules: {
             toolbar: [
                 ['bold', 'italic', 'underline', 'strike'],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                [{ 'list': 'ordered' }, { 'list': 'bullet' }],
                 ['clean']
             ]
         }
