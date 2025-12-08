@@ -24,6 +24,16 @@ let currentUser = null;
 let selectedColumns = new Set(statuses);
 let currentProjectFilter = '';
 
+function escapeHtml(text) {
+    if (!text) return text;
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 function login() {
     const email = document.getElementById('emailInput').value;
     const password = document.getElementById('passwordInput').value;
@@ -216,11 +226,11 @@ function createTaskCard(task) {
 
     let projectHtml = '';
     if (task.project) {
-        projectHtml = `<div class="task-project" style="${projectStyle}">${task.project}</div>`;
+        projectHtml = `<div class="task-project" style="${projectStyle}">${escapeHtml(task.project)}</div>`;
     }
 
     card.innerHTML = `
-        <div class="task-title">${task.name}</div>
+        <div class="task-title">${escapeHtml(task.name)}</div>
         <div class="task-meta">
             ${projectHtml}
             ${dateHtml}
@@ -351,12 +361,13 @@ function renderProjectList() {
     projectList.innerHTML = '';
     projects.forEach(project => {
         const li = document.createElement('li');
+        const safeName = escapeHtml(project.name);
         li.innerHTML = `
             <span>
                 <span class="color-preview" style="background-color: ${project.color};"></span>
-                ${project.name}
+                ${safeName}
             </span>
-            <button onclick="deleteProject('${project.name}')">Delete</button>
+            <button onclick="deleteProject('${safeName.replace(/'/g, "\\'")}')">Delete</button>
         `;
         projectList.appendChild(li);
     });
