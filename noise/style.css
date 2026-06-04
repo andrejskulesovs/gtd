@@ -354,64 +354,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
     box-shadow: 0 4px 16px var(--primary-glow);
 }
 
-/* Timer Popup */
-.timer-popup {
-    position: fixed;
-    inset: 0;
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem;
-    background: rgba(15, 15, 19, 0.68);
-    backdrop-filter: blur(10px);
-}
-
-.timer-popup.hidden {
-    display: none;
-}
-
-.timer-popup__panel {
-    width: min(100%, 360px);
-    background: rgba(25, 25, 32, 0.96);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    padding: 1.5rem;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
-    text-align: center;
-}
-
-.timer-popup__eyebrow {
-    color: var(--primary);
-    font-size: 0.78rem;
-    font-weight: 700;
-    letter-spacing: 1.5px;
-    margin-bottom: 0.65rem;
-    text-transform: uppercase;
-}
-
-.timer-popup__panel h3 {
-    color: var(--text-main);
-    font-size: 1.35rem;
-    letter-spacing: 0;
-    margin-bottom: 0.75rem;
-    text-transform: none;
-}
-
-.timer-popup__message {
-    color: var(--text-muted);
-    font-size: 0.95rem;
-    line-height: 1.45;
-    margin-bottom: 1.25rem;
-}
-
-.timer-popup__actions {
-    display: flex;
-    justify-content: center;
-    gap: 0.6rem;
-    flex-wrap: wrap;
-}
-
 @media (max-width: 430px) {
     .timer-modes {
         width: 100%;

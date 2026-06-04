@@ -250,6 +250,61 @@ class NoiseGenerator {
     }
 }
 
+class BrowserTabState {
+    constructor() {
+        this.iconLink = document.getElementById('app-icon') || this.createIconLink();
+    }
+
+    createIconLink() {
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.id = 'app-icon';
+        document.head.appendChild(link);
+        return link;
+    }
+
+    update({ mode, remaining, running, completed }) {
+        const time = this.formatTime(remaining);
+        const label = this.formatMode(mode);
+        const prefix = completed ? 'Done' : running ? time : `Paused ${time}`;
+
+        document.title = `${prefix} - ${label}`;
+        this.iconLink.href = this.buildIconHref({ mode, running, completed });
+    }
+
+    formatTime(remaining) {
+        const m = Math.floor(remaining / 60).toString().padStart(2, '0');
+        const s = (remaining % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+    }
+
+    formatMode(mode) {
+        const labels = {
+            focus: 'Focus',
+            short: 'Short Break',
+            long: 'Long Break',
+        };
+        return labels[mode] || 'Focus';
+    }
+
+    buildIconHref({ running, completed }) {
+        const statePath = completed
+            ? '<path d="M20 16.5l7 7L42 8.5" fill="none" stroke="black" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>'
+            : running
+                ? '<path d="M22 17l16 15-16 15z" fill="black"/>'
+                : '<path d="M20 17h7v30h-7zM35 17h7v30h-7z" fill="black"/>';
+        const svg = `
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+                <rect width="64" height="64" rx="16" fill="black"/>
+                <circle cx="32" cy="32" r="24" fill="white"/>
+                ${statePath}
+            </svg>
+        `;
+
+        return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+    }
+}
+
 class PomodoroTimer {
     constructor() {
         this.DURATIONS = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
@@ -257,14 +312,13 @@ class PomodoroTimer {
         this.remaining = this.DURATIONS.focus;
         this.running = false;
         this.intervalId = null;
+        this.completed = false;
+        this.tabState = new BrowserTabState();
 
         this.display = document.getElementById('timer-display');
         this.toggleBtn = document.getElementById('timer-toggle');
         this.modeBtns = document.querySelectorAll('.mode-btn');
         this.nextActions = document.getElementById('timer-next-actions');
-        this.popup = document.getElementById('timer-popup');
-        this.popupTitle = document.getElementById('timer-popup-title');
-        this.popupMessage = document.getElementById('timer-popup-message');
 
         this.initListeners();
         this.render();
@@ -280,17 +334,14 @@ class PomodoroTimer {
         document.getElementById('action-short').addEventListener('click', () => this.setMode('short', true));
         document.getElementById('action-long').addEventListener('click', () => this.setMode('long', true));
         document.getElementById('action-focus').addEventListener('click', () => this.setMode('focus', true));
-        document.getElementById('popup-short').addEventListener('click', () => this.setMode('short', true));
-        document.getElementById('popup-focus').addEventListener('click', () => this.setMode('focus', true));
-        document.getElementById('popup-close').addEventListener('click', () => this.hidePopup());
     }
 
     setMode(mode, autoStart = false) {
         this.stop();
         this.mode = mode;
         this.remaining = this.DURATIONS[mode];
+        this.completed = false;
         this.nextActions.classList.add('hidden');
-        this.hidePopup();
 
         this.modeBtns.forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === mode));
 
@@ -306,11 +357,12 @@ class PomodoroTimer {
         if (this.remaining <= 0) {
             this.remaining = this.DURATIONS[this.mode];
             this.nextActions.classList.add('hidden');
-            this.hidePopup();
         }
+        this.completed = false;
         this.requestNotificationPermission();
         this.running = true;
         this.toggleBtn.textContent = 'Pause';
+        this.render();
         this.intervalId = setInterval(() => this.tick(), 1000);
     }
 
@@ -319,6 +371,7 @@ class PomodoroTimer {
         this.toggleBtn.textContent = 'Start';
         clearInterval(this.intervalId);
         this.intervalId = null;
+        this.render();
     }
 
     tick() {
@@ -326,8 +379,9 @@ class PomodoroTimer {
         this.render();
         if (this.remaining <= 0) {
             this.stop();
+            this.completed = true;
+            this.render();
             this.playNotification();
-            this.showCompletionPopup();
             this.showSystemNotification();
             this.nextActions.classList.remove('hidden');
         }
@@ -337,6 +391,12 @@ class PomodoroTimer {
         const m = Math.floor(this.remaining / 60).toString().padStart(2, '0');
         const s = (this.remaining % 60).toString().padStart(2, '0');
         this.display.textContent = `${m}:${s}`;
+        this.tabState.update({
+            mode: this.mode,
+            remaining: this.remaining,
+            running: this.running,
+            completed: this.completed,
+        });
     }
 
     playNotification() {
@@ -374,18 +434,6 @@ class PomodoroTimer {
         new Notification(title, { body });
     }
 
-    showCompletionPopup() {
-        const isFocus = this.mode === 'focus';
-        this.popupTitle.textContent = isFocus ? 'Focus session complete' : 'Break complete';
-        this.popupMessage.textContent = isFocus
-            ? 'Take a short break before starting the next session.'
-            : 'Start another focus session when you are ready.';
-        this.popup.classList.remove('hidden');
-    }
-
-    hidePopup() {
-        this.popup.classList.add('hidden');
-    }
 }
 
 // Initialize on load
