@@ -20,7 +20,7 @@ class NoiseGenerator {
         this.customizerPanel = document.getElementById('customizer-panel');
 
         this.initListeners();
-        this.resizeCanvas();
+        requestAnimationFrame(() => this.resizeCanvas());
         window.addEventListener('resize', () => this.resizeCanvas());
     }
 
@@ -198,7 +198,7 @@ class NoiseGenerator {
         if (this.isPlaying) {
             this.playBtn.innerHTML = '<span class="play-icon">⏸</span> Pause';
         } else {
-            this.playBtn.innerHTML = '<span class="play-icon">▶</span> Start';
+            this.playBtn.innerHTML = '<span class="play-icon">▶</span> Play';
         }
     }
 
@@ -250,12 +250,110 @@ class NoiseGenerator {
             this.updateFilter(e.target.value);
         });
 
-        // Select first preset by default
-        this.changePreset('white');
+        this.changePreset('brown');
+    }
+}
+
+class PomodoroTimer {
+    constructor() {
+        this.DURATIONS = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 };
+        this.mode = 'focus';
+        this.remaining = this.DURATIONS.focus;
+        this.running = false;
+        this.intervalId = null;
+
+        this.display = document.getElementById('timer-display');
+        this.toggleBtn = document.getElementById('timer-toggle');
+        this.modeBtns = document.querySelectorAll('.mode-btn');
+        this.nextActions = document.getElementById('timer-next-actions');
+
+        this.initListeners();
+        this.render();
+    }
+
+    initListeners() {
+        this.toggleBtn.addEventListener('click', () => this.toggle());
+
+        this.modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.setMode(btn.dataset.mode));
+        });
+
+        document.getElementById('action-short').addEventListener('click', () => this.setMode('short', true));
+        document.getElementById('action-long').addEventListener('click', () => this.setMode('long', true));
+        document.getElementById('action-focus').addEventListener('click', () => this.setMode('focus', true));
+    }
+
+    setMode(mode, autoStart = false) {
+        this.stop();
+        this.mode = mode;
+        this.remaining = this.DURATIONS[mode];
+        this.nextActions.classList.add('hidden');
+
+        this.modeBtns.forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === mode));
+
+        this.render();
+        if (autoStart) this.start();
+    }
+
+    toggle() {
+        this.running ? this.stop() : this.start();
+    }
+
+    start() {
+        if (this.remaining <= 0) {
+            this.remaining = this.DURATIONS[this.mode];
+            this.nextActions.classList.add('hidden');
+        }
+        this.running = true;
+        this.toggleBtn.textContent = 'Pause';
+        this.intervalId = setInterval(() => this.tick(), 1000);
+    }
+
+    stop() {
+        this.running = false;
+        this.toggleBtn.textContent = 'Start';
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+    }
+
+    tick() {
+        this.remaining--;
+        this.render();
+        if (this.remaining <= 0) {
+            this.stop();
+            this.playNotification();
+            this.nextActions.classList.remove('hidden');
+        }
+    }
+
+    render() {
+        const m = Math.floor(this.remaining / 60).toString().padStart(2, '0');
+        const s = (this.remaining % 60).toString().padStart(2, '0');
+        this.display.textContent = `${m}:${s}`;
+    }
+
+    playNotification() {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [660, 880, 1100];
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const t = ctx.currentTime + i * 0.35;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.4, t + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+            osc.start(t);
+            osc.stop(t + 0.6);
+        });
     }
 }
 
 // Initialize on load
 window.addEventListener('DOMContentLoaded', () => {
     new NoiseGenerator();
+    new PomodoroTimer();
 });

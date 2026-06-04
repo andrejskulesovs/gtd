@@ -12,21 +12,32 @@
 <body>
     <div class="background-gradient"></div>
     <div class="noise-overlay"></div>
-    
-    <main class="app-container">
-        <header>
-            <h1>Sonic Sanctuary</h1>
-            <p>Focus. Relax. Block the world.</p>
-        </header>
 
-        <section class="visualizer-container">
-            <canvas id="visualizer"></canvas>
-            <div class="status-indicator" id="status-indicator">OFF</div>
+    <main class="app-container">
+        <section class="timer-wrapper glass-panel">
+            <h2>Pomodoro Timer</h2>
+            <div class="timer-modes">
+                <button class="mode-btn selected" data-mode="focus">Focus</button>
+                <button class="mode-btn" data-mode="short">Short Break</button>
+                <button class="mode-btn" data-mode="long">Long Break</button>
+            </div>
+            <div class="timer-display" id="timer-display">25:00</div>
+            <div class="timer-control">
+                <button id="timer-toggle" class="primary-btn">Start</button>
+            </div>
+            <div class="timer-next-actions hidden" id="timer-next-actions">
+                <p class="next-label">Session done! What's next?</p>
+                <div class="next-btns">
+                    <button id="action-short" class="next-btn">5 min Break</button>
+                    <button id="action-long" class="next-btn">15 min Break</button>
+                    <button id="action-focus" class="next-btn next-btn--focus">Next Focus</button>
+                </div>
+            </div>
         </section>
 
         <section class="controls-wrapper glass-panel">
+            <h2>Sonic Sanctuary</h2>
             <div class="presets">
-                <h2>Presets</h2>
                 <div class="preset-grid">
                     <button class="preset-btn" data-type="white">
                         <span class="icon">⚪</span>
@@ -52,7 +63,7 @@
                     <label for="volume">Master Volume</label>
                     <input type="range" id="volume" min="0" max="1" step="0.01" value="0.5">
                 </div>
-                
+
                 <div class="customizer hidden" id="customizer-panel">
                     <h3>Fine Tune</h3>
                     <div class="slider-group">
@@ -63,9 +74,13 @@
             </div>
 
             <div class="play-control">
+                <div class="visualizer-container">
+                    <canvas id="visualizer"></canvas>
+                    <div class="status-indicator" id="status-indicator">OFF</div>
+                </div>
                 <button id="play-pause" class="primary-btn">
                     <span class="play-icon">▶</span>
-                    Start
+                    Play
                 </button>
             </div>
         </section>
