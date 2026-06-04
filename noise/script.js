@@ -50,7 +50,7 @@ class NoiseGenerator {
     }
 
     async generateBuffers() {
-        const duration = 5; // 5 seconds loop
+        const duration = 30;
         const sampleRate = this.ctx.sampleRate;
         const frameCount = sampleRate * duration;
 
@@ -90,17 +90,13 @@ class NoiseGenerator {
             brownData[i] *= 3.5; // compensate for gain
         }
 
-        // Speech Blocker (Mix of Pink and slight modulation)
-        // For simplicity, we'll reuse generated noises or create a specific mix.
-        // Let's create a custom "heavy" pink noise with more low end.
+        // Speech Blocker (pink noise with low-mid emphasis and light air).
         this.buffers.speech_blocker = this.ctx.createBuffer(1, frameCount, sampleRate);
         const speechData = this.buffers.speech_blocker.getChannelData(0);
-        // Reuse pink algorithm but add some low freq sine to masks fundamental voice freq? 
-        // Actually, let's just use a denser pink noise or filtered brown. 
-        // Let's stick to standard 1/f but maybe just slightly louder low-mids.
-        // For now, let's just copy Pink but mix in some White for "shhh" masking of sibilance.
+        let lowMid = 0;
         for (let i = 0; i < frameCount; i++) {
-            speechData[i] = pinkData[i] * 0.8 + whiteData[i] * 0.1;
+            lowMid = lowMid * 0.985 + whiteData[i] * 0.015;
+            speechData[i] = pinkData[i] * 0.75 + lowMid * 1.4 + whiteData[i] * 0.06;
         }
     }
 
@@ -266,6 +262,9 @@ class PomodoroTimer {
         this.toggleBtn = document.getElementById('timer-toggle');
         this.modeBtns = document.querySelectorAll('.mode-btn');
         this.nextActions = document.getElementById('timer-next-actions');
+        this.popup = document.getElementById('timer-popup');
+        this.popupTitle = document.getElementById('timer-popup-title');
+        this.popupMessage = document.getElementById('timer-popup-message');
 
         this.initListeners();
         this.render();
@@ -281,6 +280,9 @@ class PomodoroTimer {
         document.getElementById('action-short').addEventListener('click', () => this.setMode('short', true));
         document.getElementById('action-long').addEventListener('click', () => this.setMode('long', true));
         document.getElementById('action-focus').addEventListener('click', () => this.setMode('focus', true));
+        document.getElementById('popup-short').addEventListener('click', () => this.setMode('short', true));
+        document.getElementById('popup-focus').addEventListener('click', () => this.setMode('focus', true));
+        document.getElementById('popup-close').addEventListener('click', () => this.hidePopup());
     }
 
     setMode(mode, autoStart = false) {
@@ -288,6 +290,7 @@ class PomodoroTimer {
         this.mode = mode;
         this.remaining = this.DURATIONS[mode];
         this.nextActions.classList.add('hidden');
+        this.hidePopup();
 
         this.modeBtns.forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === mode));
 
@@ -303,7 +306,9 @@ class PomodoroTimer {
         if (this.remaining <= 0) {
             this.remaining = this.DURATIONS[this.mode];
             this.nextActions.classList.add('hidden');
+            this.hidePopup();
         }
+        this.requestNotificationPermission();
         this.running = true;
         this.toggleBtn.textContent = 'Pause';
         this.intervalId = setInterval(() => this.tick(), 1000);
@@ -322,6 +327,8 @@ class PomodoroTimer {
         if (this.remaining <= 0) {
             this.stop();
             this.playNotification();
+            this.showCompletionPopup();
+            this.showSystemNotification();
             this.nextActions.classList.remove('hidden');
         }
     }
@@ -349,6 +356,35 @@ class PomodoroTimer {
             osc.start(t);
             osc.stop(t + 0.6);
         });
+    }
+
+    requestNotificationPermission() {
+        if (!('Notification' in window) || Notification.permission !== 'default') return;
+        Notification.requestPermission();
+    }
+
+    showSystemNotification() {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+        const title = this.mode === 'focus' ? 'Focus session complete' : 'Break complete';
+        const body = this.mode === 'focus'
+            ? 'Time to take a short break.'
+            : 'Ready for the next focus session.';
+
+        new Notification(title, { body });
+    }
+
+    showCompletionPopup() {
+        const isFocus = this.mode === 'focus';
+        this.popupTitle.textContent = isFocus ? 'Focus session complete' : 'Break complete';
+        this.popupMessage.textContent = isFocus
+            ? 'Take a short break before starting the next session.'
+            : 'Start another focus session when you are ready.';
+        this.popup.classList.remove('hidden');
+    }
+
+    hidePopup() {
+        this.popup.classList.add('hidden');
     }
 }
 

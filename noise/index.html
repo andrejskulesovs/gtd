@@ -12,6 +12,18 @@
 <body>
     <div class="background-gradient"></div>
     <div class="noise-overlay"></div>
+    <div class="timer-popup hidden" id="timer-popup" role="alertdialog" aria-live="assertive" aria-labelledby="timer-popup-title">
+        <div class="timer-popup__panel">
+            <p class="timer-popup__eyebrow">Timer ended</p>
+            <h3 id="timer-popup-title">Focus session complete</h3>
+            <p class="timer-popup__message" id="timer-popup-message">Take a short break before starting the next session.</p>
+            <div class="timer-popup__actions">
+                <button id="popup-short" class="next-btn next-btn--focus">Start Break</button>
+                <button id="popup-focus" class="next-btn">New Focus</button>
+                <button id="popup-close" class="next-btn">Close</button>
+            </div>
+        </div>
+    </div>
 
     <main class="app-container">
         <section class="timer-wrapper glass-panel">
