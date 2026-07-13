@@ -51,22 +51,48 @@ class NoiseGenerator {
 
     async generateBuffers() {
         const duration = 30;
+        const crossfadeDuration = 2; // 2 seconds crossfade
+        const warmupDuration = 2;    // 2 seconds filter warmup
+        
         const sampleRate = this.ctx.sampleRate;
-        const frameCount = sampleRate * duration;
+        const loopCount = sampleRate * duration;
+        const crossfadeCount = sampleRate * crossfadeDuration;
+        const warmupCount = sampleRate * warmupDuration;
+        const totalCount = loopCount + crossfadeCount;
 
-        // White Noise
-        this.buffers.white = this.ctx.createBuffer(1, frameCount, sampleRate);
+        // Helper to apply equal-power crossfade to seamless loop
+        const applyCrossfade = (data) => {
+            const out = new Float32Array(loopCount);
+            // Copy the non-overlapping part
+            for (let i = crossfadeCount; i < loopCount; i++) {
+                out[i] = data[i];
+            }
+            // Crossfade the overlap region (blend start and end of original sequence)
+            for (let i = 0; i < crossfadeCount; i++) {
+                const t = i / (crossfadeCount - 1);
+                const gainStart = Math.sin(t * Math.PI / 2);
+                const gainEnd = Math.cos(t * Math.PI / 2);
+                out[i] = data[loopCount + i] * gainEnd + data[i] * gainStart;
+            }
+            return out;
+        };
+
+        // 1. White Noise
+        this.buffers.white = this.ctx.createBuffer(1, loopCount, sampleRate);
         const whiteData = this.buffers.white.getChannelData(0);
-        for (let i = 0; i < frameCount; i++) {
-            whiteData[i] = Math.random() * 2 - 1;
+        const rawWhite = new Float32Array(totalCount);
+        for (let i = 0; i < totalCount; i++) {
+            rawWhite[i] = Math.random() * 2 - 1;
         }
+        whiteData.set(applyCrossfade(rawWhite));
 
-        // Pink Noise (Paul Kellett's refined method)
-        this.buffers.pink = this.ctx.createBuffer(1, frameCount, sampleRate);
+        // 2. Pink Noise (Paul Kellett's refined method with warmup and crossfade)
+        this.buffers.pink = this.ctx.createBuffer(1, loopCount, sampleRate);
         const pinkData = this.buffers.pink.getChannelData(0);
-        let b0, b1, b2, b3, b4, b5, b6;
-        b0 = b1 = b2 = b3 = b4 = b5 = b6 = 0.0;
-        for (let i = 0; i < frameCount; i++) {
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        
+        // Warmup filter states
+        for (let i = 0; i < warmupCount; i++) {
             const white = Math.random() * 2 - 1;
             b0 = 0.99886 * b0 + white * 0.0555179;
             b1 = 0.99332 * b1 + white * 0.0750759;
@@ -74,30 +100,83 @@ class NoiseGenerator {
             b3 = 0.86650 * b3 + white * 0.3104856;
             b4 = 0.55000 * b4 + white * 0.5329522;
             b5 = -0.7616 * b5 - white * 0.0168980;
-            pinkData[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-            pinkData[i] *= 0.11; // compensate for gain
             b6 = white * 0.115926;
         }
+        
+        // Generate raw pink noise
+        const rawPink = new Float32Array(totalCount);
+        for (let i = 0; i < totalCount; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            rawPink[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+            rawPink[i] *= 0.11; // compensate for gain
+            b6 = white * 0.115926;
+        }
+        pinkData.set(applyCrossfade(rawPink));
 
-        // Brown Noise
-        this.buffers.brown = this.ctx.createBuffer(1, frameCount, sampleRate);
+        // 3. Brown Noise (with warmup and crossfade)
+        this.buffers.brown = this.ctx.createBuffer(1, loopCount, sampleRate);
         const brownData = this.buffers.brown.getChannelData(0);
         let lastOut = 0;
-        for (let i = 0; i < frameCount; i++) {
+        
+        // Warmup filter state
+        for (let i = 0; i < warmupCount; i++) {
             const white = Math.random() * 2 - 1;
             lastOut = (lastOut + (0.02 * white)) / 1.02;
-            brownData[i] = lastOut;
-            brownData[i] *= 3.5; // compensate for gain
+        }
+        
+        // Generate raw brown noise
+        const rawBrown = new Float32Array(totalCount);
+        for (let i = 0; i < totalCount; i++) {
+            const white = Math.random() * 2 - 1;
+            lastOut = (lastOut + (0.02 * white)) / 1.02;
+            rawBrown[i] = lastOut * 3.5; // compensate for gain
+        }
+        brownData.set(applyCrossfade(rawBrown));
+
+        // 4. Speech Blocker (pink noise with low-mid emphasis and light air, generated with warmup and crossfade)
+        this.buffers.speech_blocker = this.ctx.createBuffer(1, loopCount, sampleRate);
+        const speechData = this.buffers.speech_blocker.getChannelData(0);
+        
+        let sb_b0 = 0, sb_b1 = 0, sb_b2 = 0, sb_b3 = 0, sb_b4 = 0, sb_b5 = 0, sb_b6 = 0;
+        let sb_lowMid = 0;
+        
+        // Warmup speech blocker filters
+        for (let i = 0; i < warmupCount; i++) {
+            const white = Math.random() * 2 - 1;
+            sb_b0 = 0.99886 * sb_b0 + white * 0.0555179;
+            sb_b1 = 0.99332 * sb_b1 + white * 0.0750759;
+            sb_b2 = 0.96900 * sb_b2 + white * 0.1538520;
+            sb_b3 = 0.86650 * sb_b3 + white * 0.3104856;
+            sb_b4 = 0.55000 * sb_b4 + white * 0.5329522;
+            sb_b5 = -0.7616 * sb_b5 - white * 0.0168980;
+            sb_b6 = white * 0.115926;
+            
+            sb_lowMid = sb_lowMid * 0.985 + white * 0.015;
         }
 
-        // Speech Blocker (pink noise with low-mid emphasis and light air).
-        this.buffers.speech_blocker = this.ctx.createBuffer(1, frameCount, sampleRate);
-        const speechData = this.buffers.speech_blocker.getChannelData(0);
-        let lowMid = 0;
-        for (let i = 0; i < frameCount; i++) {
-            lowMid = lowMid * 0.985 + whiteData[i] * 0.015;
-            speechData[i] = pinkData[i] * 0.75 + lowMid * 1.4 + whiteData[i] * 0.06;
+        // Generate raw speech blocker
+        const rawSpeech = new Float32Array(totalCount);
+        for (let i = 0; i < totalCount; i++) {
+            const white = Math.random() * 2 - 1;
+            sb_b0 = 0.99886 * sb_b0 + white * 0.0555179;
+            sb_b1 = 0.99332 * sb_b1 + white * 0.0750759;
+            sb_b2 = 0.96900 * sb_b2 + white * 0.1538520;
+            sb_b3 = 0.86650 * sb_b3 + white * 0.3104856;
+            sb_b4 = 0.55000 * sb_b4 + white * 0.5329522;
+            sb_b5 = -0.7616 * sb_b5 - white * 0.0168980;
+            const pinkVal = (sb_b0 + sb_b1 + sb_b2 + sb_b3 + sb_b4 + sb_b5 + sb_b6 + white * 0.5362) * 0.11;
+            sb_b6 = white * 0.115926;
+
+            sb_lowMid = sb_lowMid * 0.985 + white * 0.015;
+            rawSpeech[i] = pinkVal * 0.75 + sb_lowMid * 1.4 + white * 0.06;
         }
+        speechData.set(applyCrossfade(rawSpeech));
     }
 
     startNoise() {
