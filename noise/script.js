@@ -1,13 +1,102 @@
+class NoiseSampleGenerator {
+    constructor(sampleRate, type) {
+        this.currentType = type;
+        this.previousType = null;
+        this.transitionLength = Math.max(1, Math.round(sampleRate * 0.16));
+        this.transitionRemaining = 0;
+        this.states = {
+            pink: this.createPinkState(),
+            brown: { lastOut: 0 },
+            speech_blocker: { ...this.createPinkState(), lowMid: 0 },
+        };
+
+        Object.keys(this.states).forEach((noiseType) => {
+            for (let i = 0; i < 4096; i++) this.sample(noiseType);
+        });
+    }
+
+    createPinkState() {
+        return { b0: 0, b1: 0, b2: 0, b3: 0, b4: 0, b5: 0, b6: 0 };
+    }
+
+    pinkSample(state, white) {
+        state.b0 = 0.99886 * state.b0 + white * 0.0555179;
+        state.b1 = 0.99332 * state.b1 + white * 0.0750759;
+        state.b2 = 0.969 * state.b2 + white * 0.153852;
+        state.b3 = 0.8665 * state.b3 + white * 0.3104856;
+        state.b4 = 0.55 * state.b4 + white * 0.5329522;
+        state.b5 = -0.7616 * state.b5 - white * 0.016898;
+
+        const output = (state.b0 + state.b1 + state.b2 + state.b3 + state.b4 + state.b5 + state.b6 + white * 0.5362) * 0.11;
+        state.b6 = white * 0.115926;
+        return output;
+    }
+
+    sample(type) {
+        const white = Math.random() * 2 - 1;
+
+        switch (type) {
+            case 'pink':
+                return this.pinkSample(this.states.pink, white);
+            case 'brown': {
+                const state = this.states.brown;
+                state.lastOut = (state.lastOut + white * 0.02) / 1.02;
+                return state.lastOut * 3.5;
+            }
+            case 'speech_blocker': {
+                const state = this.states.speech_blocker;
+                const pink = this.pinkSample(state, white);
+                state.lowMid = state.lowMid * 0.985 + white * 0.015;
+                return pink * 0.75 + state.lowMid * 1.4 + white * 0.06;
+            }
+            case 'white':
+            default:
+                return white;
+        }
+    }
+
+    setType(type) {
+        if (type === this.currentType) return;
+
+        this.previousType = this.currentType;
+        this.currentType = type;
+        this.transitionRemaining = this.transitionLength;
+    }
+
+    fill(output) {
+        for (let i = 0; i < output.length; i++) {
+            const current = this.sample(this.currentType);
+
+            if (this.transitionRemaining > 0) {
+                const previous = this.sample(this.previousType);
+                const progress = 1 - this.transitionRemaining / this.transitionLength;
+                output[i] = previous * Math.cos(progress * Math.PI / 2) + current * Math.sin(progress * Math.PI / 2);
+                this.transitionRemaining--;
+
+                if (this.transitionRemaining === 0) this.previousType = null;
+            } else {
+                output[i] = current;
+            }
+        }
+    }
+}
+
 class NoiseGenerator {
     constructor() {
         this.ctx = null;
         this.masterGain = null;
         this.filterNode = null;
+        this.limiter = null;
         this.sourceNode = null;
         this.analyser = null;
+        this.visualizerData = null;
+        this.visualizerFrame = null;
+        this.stopTimer = null;
+        this.initPromise = null;
+        this.audioReady = false;
+        this.usesAudioWorklet = false;
         this.isPlaying = false;
         this.currentType = 'white';
-        this.buffers = {};
 
         // UI Elements
         this.playBtn = document.getElementById('play-pause');
@@ -25,256 +114,195 @@ class NoiseGenerator {
     }
 
     async initAudio() {
-        if (this.ctx) return;
+        if (this.initPromise) return this.initPromise;
 
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AudioContext();
+        this.initPromise = (async () => {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
 
-        this.masterGain = this.ctx.createGain();
-        this.filterNode = this.ctx.createBiquadFilter();
-        this.analyser = this.ctx.createAnalyser();
+            this.masterGain = this.ctx.createGain();
+            this.filterNode = this.ctx.createBiquadFilter();
+            this.limiter = this.ctx.createDynamicsCompressor();
+            this.analyser = this.ctx.createAnalyser();
 
-        // Setup graph: Source -> Filter -> MasterGain -> Analyser -> Destination
-        this.filterNode.connect(this.masterGain);
-        this.masterGain.connect(this.analyser);
-        this.analyser.connect(this.ctx.destination);
+            // Source -> tone shaping -> peak protection -> volume -> visualizer.
+            // The limiter prevents the occasional noise peak from clipping when
+            // a preset and the volume slider are both set high.
+            this.filterNode.connect(this.limiter);
+            this.limiter.connect(this.masterGain);
+            this.masterGain.connect(this.analyser);
+            this.analyser.connect(this.ctx.destination);
 
-        // Initial settings
-        this.filterNode.type = 'lowpass';
-        this.filterNode.frequency.value = 20000;
-        this.masterGain.gain.value = 0.5;
-        this.analyser.fftSize = 256;
+            this.filterNode.type = 'lowpass';
+            this.filterNode.frequency.value = Number(this.filterSlider.value);
+            this.filterNode.Q.value = Math.SQRT1_2;
+            this.masterGain.gain.value = 0;
+            this.limiter.threshold.value = -9;
+            this.limiter.knee.value = 0;
+            this.limiter.ratio.value = 20;
+            this.limiter.attack.value = 0.003;
+            this.limiter.release.value = 0.12;
+            this.analyser.fftSize = 256;
+            this.analyser.smoothingTimeConstant = 0.85;
+            this.visualizerData = new Uint8Array(this.analyser.frequencyBinCount);
 
-        // Generate buffers
-        await this.generateBuffers();
+            try {
+                if (!this.ctx.audioWorklet || typeof AudioWorkletNode === 'undefined') {
+                    throw new Error('AudioWorklet is unavailable');
+                }
+                await this.ctx.audioWorklet.addModule('noise-processor.js');
+                this.usesAudioWorklet = true;
+            } catch (error) {
+                // Older browsers use the fallback below. Modern browsers keep
+                // the generator on the audio rendering thread, which is the
+                // important path for uninterrupted long-running playback.
+                this.usesAudioWorklet = false;
+                console.info('Using compatibility noise generator.', error);
+            }
+
+            this.audioReady = true;
+        })();
+
+        try {
+            await this.initPromise;
+        } catch (error) {
+            this.initPromise = null;
+            this.ctx = null;
+            throw error;
+        }
+
+        return this.initPromise;
     }
 
-    async generateBuffers() {
-        const duration = 30;
-        const crossfadeDuration = 2; // 2 seconds crossfade
-        const warmupDuration = 2;    // 2 seconds filter warmup
-        
-        const sampleRate = this.ctx.sampleRate;
-        const loopCount = sampleRate * duration;
-        const crossfadeCount = sampleRate * crossfadeDuration;
-        const warmupCount = sampleRate * warmupDuration;
-        const totalCount = loopCount + crossfadeCount;
-
-        // Helper to apply equal-power crossfade to seamless loop
-        const applyCrossfade = (data) => {
-            const out = new Float32Array(loopCount);
-            // Copy the non-overlapping part
-            for (let i = crossfadeCount; i < loopCount; i++) {
-                out[i] = data[i];
-            }
-            // Crossfade the overlap region (blend start and end of original sequence)
-            for (let i = 0; i < crossfadeCount; i++) {
-                const t = i / (crossfadeCount - 1);
-                const gainStart = Math.sin(t * Math.PI / 2);
-                const gainEnd = Math.cos(t * Math.PI / 2);
-                out[i] = data[loopCount + i] * gainEnd + data[i] * gainStart;
-            }
-            return out;
-        };
-
-        // 1. White Noise
-        this.buffers.white = this.ctx.createBuffer(1, loopCount, sampleRate);
-        const whiteData = this.buffers.white.getChannelData(0);
-        const rawWhite = new Float32Array(totalCount);
-        for (let i = 0; i < totalCount; i++) {
-            rawWhite[i] = Math.random() * 2 - 1;
-        }
-        whiteData.set(applyCrossfade(rawWhite));
-
-        // 2. Pink Noise (Paul Kellett's refined method with warmup and crossfade)
-        this.buffers.pink = this.ctx.createBuffer(1, loopCount, sampleRate);
-        const pinkData = this.buffers.pink.getChannelData(0);
-        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-        
-        // Warmup filter states
-        for (let i = 0; i < warmupCount; i++) {
-            const white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            b6 = white * 0.115926;
-        }
-        
-        // Generate raw pink noise
-        const rawPink = new Float32Array(totalCount);
-        for (let i = 0; i < totalCount; i++) {
-            const white = Math.random() * 2 - 1;
-            b0 = 0.99886 * b0 + white * 0.0555179;
-            b1 = 0.99332 * b1 + white * 0.0750759;
-            b2 = 0.96900 * b2 + white * 0.1538520;
-            b3 = 0.86650 * b3 + white * 0.3104856;
-            b4 = 0.55000 * b4 + white * 0.5329522;
-            b5 = -0.7616 * b5 - white * 0.0168980;
-            rawPink[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-            rawPink[i] *= 0.11; // compensate for gain
-            b6 = white * 0.115926;
-        }
-        pinkData.set(applyCrossfade(rawPink));
-
-        // 3. Brown Noise (with warmup and crossfade)
-        this.buffers.brown = this.ctx.createBuffer(1, loopCount, sampleRate);
-        const brownData = this.buffers.brown.getChannelData(0);
-        let lastOut = 0;
-        
-        // Warmup filter state
-        for (let i = 0; i < warmupCount; i++) {
-            const white = Math.random() * 2 - 1;
-            lastOut = (lastOut + (0.02 * white)) / 1.02;
-        }
-        
-        // Generate raw brown noise
-        const rawBrown = new Float32Array(totalCount);
-        for (let i = 0; i < totalCount; i++) {
-            const white = Math.random() * 2 - 1;
-            lastOut = (lastOut + (0.02 * white)) / 1.02;
-            rawBrown[i] = lastOut * 3.5; // compensate for gain
-        }
-        brownData.set(applyCrossfade(rawBrown));
-
-        // 4. Speech Blocker (pink noise with low-mid emphasis and light air, generated with warmup and crossfade)
-        this.buffers.speech_blocker = this.ctx.createBuffer(1, loopCount, sampleRate);
-        const speechData = this.buffers.speech_blocker.getChannelData(0);
-        
-        let sb_b0 = 0, sb_b1 = 0, sb_b2 = 0, sb_b3 = 0, sb_b4 = 0, sb_b5 = 0, sb_b6 = 0;
-        let sb_lowMid = 0;
-        
-        // Warmup speech blocker filters
-        for (let i = 0; i < warmupCount; i++) {
-            const white = Math.random() * 2 - 1;
-            sb_b0 = 0.99886 * sb_b0 + white * 0.0555179;
-            sb_b1 = 0.99332 * sb_b1 + white * 0.0750759;
-            sb_b2 = 0.96900 * sb_b2 + white * 0.1538520;
-            sb_b3 = 0.86650 * sb_b3 + white * 0.3104856;
-            sb_b4 = 0.55000 * sb_b4 + white * 0.5329522;
-            sb_b5 = -0.7616 * sb_b5 - white * 0.0168980;
-            sb_b6 = white * 0.115926;
-            
-            sb_lowMid = sb_lowMid * 0.985 + white * 0.015;
+    createNoiseSource() {
+        if (this.usesAudioWorklet) {
+            return new AudioWorkletNode(this.ctx, 'continuous-noise', {
+                numberOfInputs: 0,
+                numberOfOutputs: 1,
+                outputChannelCount: [1],
+                processorOptions: { type: this.currentType },
+            });
         }
 
-        // Generate raw speech blocker
-        const rawSpeech = new Float32Array(totalCount);
-        for (let i = 0; i < totalCount; i++) {
-            const white = Math.random() * 2 - 1;
-            sb_b0 = 0.99886 * sb_b0 + white * 0.0555179;
-            sb_b1 = 0.99332 * sb_b1 + white * 0.0750759;
-            sb_b2 = 0.96900 * sb_b2 + white * 0.1538520;
-            sb_b3 = 0.86650 * sb_b3 + white * 0.3104856;
-            sb_b4 = 0.55000 * sb_b4 + white * 0.5329522;
-            sb_b5 = -0.7616 * sb_b5 - white * 0.0168980;
-            const pinkVal = (sb_b0 + sb_b1 + sb_b2 + sb_b3 + sb_b4 + sb_b5 + sb_b6 + white * 0.5362) * 0.11;
-            sb_b6 = white * 0.115926;
+        // A compatibility fallback for browsers without AudioWorklet support.
+        // It has no finite buffer, so it still cannot create a loop seam.
+        const generator = new NoiseSampleGenerator(this.ctx.sampleRate, this.currentType);
+        const source = this.ctx.createScriptProcessor(4096, 0, 1);
+        source.onaudioprocess = (event) => generator.fill(event.outputBuffer.getChannelData(0));
+        source.setNoiseType = (type) => generator.setType(type);
+        return source;
+    }
 
-            sb_lowMid = sb_lowMid * 0.985 + white * 0.015;
-            rawSpeech[i] = pinkVal * 0.75 + sb_lowMid * 1.4 + white * 0.06;
-        }
-        speechData.set(applyCrossfade(rawSpeech));
+    disposeSource(source) {
+        if (!source) return;
+
+        source.disconnect();
+        if ('onaudioprocess' in source) source.onaudioprocess = null;
     }
 
     startNoise() {
-        if (!this.ctx) return;
-        if (this.sourceNode) {
-            this.sourceNode.stop();
-        }
+        if (!this.audioReady || !this.ctx) return;
 
-        this.sourceNode = this.ctx.createBufferSource();
-        this.sourceNode.buffer = this.buffers[this.currentType];
-        this.sourceNode.loop = true;
+        window.clearTimeout(this.stopTimer);
+        if (this.sourceNode) this.disposeSource(this.sourceNode);
+
+        this.sourceNode = this.createNoiseSource();
         this.sourceNode.connect(this.filterNode);
 
-        // Fade in
-        this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
-        this.masterGain.gain.linearRampToValueAtTime(this.volumeSlider.value, this.ctx.currentTime + 0.5);
+        const now = this.ctx.currentTime;
+        const targetVolume = Number(this.volumeSlider.value);
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(0, now);
+        this.masterGain.gain.linearRampToValueAtTime(targetVolume, now + 0.08);
 
-        this.sourceNode.start();
-        this.statusIndicator.innerText = "ACTIVE";
+        this.statusIndicator.innerText = 'ACTIVE';
         this.statusIndicator.classList.add('active');
         this.isPlaying = true;
         this.updatePlayButton();
-        this.drawVisualizer();
+
+        if (this.visualizerFrame === null) this.drawVisualizer();
     }
 
     stopNoise() {
         if (this.sourceNode) {
-            // Fade out
-            this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.1);
-            setTimeout(() => {
-                if (this.sourceNode) {
-                    this.sourceNode.stop();
-                    this.sourceNode = null;
-                }
-            }, 500);
+            const sourceToStop = this.sourceNode;
+            const now = this.ctx.currentTime;
+            this.masterGain.gain.cancelScheduledValues(now);
+            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+            this.masterGain.gain.linearRampToValueAtTime(0, now + 0.12);
+
+            this.stopTimer = window.setTimeout(() => {
+                if (this.sourceNode !== sourceToStop) return;
+                this.disposeSource(sourceToStop);
+                this.sourceNode = null;
+            }, 140);
         }
-        this.statusIndicator.innerText = "OFF";
+
+        this.statusIndicator.innerText = 'OFF';
         this.statusIndicator.classList.remove('active');
         this.isPlaying = false;
         this.updatePlayButton();
+
+        if (this.visualizerFrame !== null) {
+            cancelAnimationFrame(this.visualizerFrame);
+            this.visualizerFrame = null;
+        }
     }
 
-    togglePlay() {
-        if (!this.ctx) {
-            this.initAudio().then(() => this.startNoise());
-        } else {
-            if (this.ctx.state === 'suspended') {
-                this.ctx.resume();
-            }
-            if (this.isPlaying) {
-                this.stopNoise();
-            } else {
+    async togglePlay() {
+        if (!this.audioReady) {
+            this.playBtn.disabled = true;
+            try {
+                await this.initAudio();
+                await this.ctx.resume();
                 this.startNoise();
+            } finally {
+                this.playBtn.disabled = false;
             }
+            return;
         }
+
+        if (this.isPlaying) {
+            this.stopNoise();
+            return;
+        }
+
+        if (this.ctx.state === 'suspended') await this.ctx.resume();
+        this.startNoise();
     }
 
     changePreset(type) {
         if (this.currentType === type) return;
         this.currentType = type;
 
-        // Update UI
-        this.presetBtns.forEach(btn => btn.classList.remove('selected'));
-        document.querySelector(`.preset-btn[data-type="${type}"]`).classList.add('selected');
-
-        // Show/Hide customizer (only meaningful for some, but let's show for all for now)
+        this.presetBtns.forEach((btn) => btn.classList.toggle('selected', btn.dataset.type === type));
         this.customizerPanel.classList.remove('hidden');
 
-        if (this.isPlaying) {
-            // Crossfade to new noise
-            const oldSource = this.sourceNode;
-            this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
+        if (!this.isPlaying || !this.sourceNode) return;
 
-            setTimeout(() => {
-                oldSource.stop();
-                this.startNoise();
-            }, 200);
+        // Change colour inside the generator. It performs an equal-power
+        // crossfade there, so the master output never drops to silence.
+        if (this.usesAudioWorklet) {
+            this.sourceNode.port.postMessage({ type });
+        } else {
+            this.sourceNode.setNoiseType(type);
         }
     }
 
     updateVolume(val) {
-        if (this.masterGain) {
-            this.masterGain.gain.setTargetAtTime(val, this.ctx.currentTime, 0.1);
-        }
+        if (!this.masterGain) return;
+        this.masterGain.gain.setTargetAtTime(Number(val), this.ctx.currentTime, 0.025);
     }
 
     updateFilter(val) {
-        if (this.filterNode) {
-            this.filterNode.frequency.setTargetAtTime(val, this.ctx.currentTime, 0.1);
-        }
+        if (!this.filterNode) return;
+        this.filterNode.frequency.setTargetAtTime(Number(val), this.ctx.currentTime, 0.04);
     }
 
     updatePlayButton() {
-        if (this.isPlaying) {
-            this.playBtn.innerHTML = '<span class="play-icon">⏸</span> Pause';
-        } else {
-            this.playBtn.innerHTML = '<span class="play-icon">▶</span> Play';
-        }
+        this.playBtn.innerHTML = this.isPlaying
+            ? '<span class="play-icon">⏸</span> Pause'
+            : '<span class="play-icon">▶</span> Play';
     }
 
     resizeCanvas() {
@@ -283,47 +311,36 @@ class NoiseGenerator {
     }
 
     drawVisualizer() {
-        if (!this.isPlaying) return;
+        if (!this.isPlaying) {
+            this.visualizerFrame = null;
+            return;
+        }
 
-        requestAnimationFrame(() => this.drawVisualizer());
-
-        const bufferLength = this.analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
-        this.analyser.getByteFrequencyData(dataArray);
-
+        this.analyser.getByteFrequencyData(this.visualizerData);
         this.canvasCtx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-        const barWidth = (this.canvas.width / bufferLength) * 2.5;
-        let barHeight;
+        const barWidth = (this.canvas.width / this.visualizerData.length) * 2.5;
         let x = 0;
 
-        for (let i = 0; i < bufferLength; i++) {
-            barHeight = dataArray[i] / 2;
-
-            this.canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.4)'; // Simple white visualization
+        for (let i = 0; i < this.visualizerData.length; i++) {
+            const barHeight = this.visualizerData[i] / 2;
+            this.canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.4)';
             this.canvasCtx.fillRect(x, this.canvas.height - barHeight, barWidth, barHeight);
-
             x += barWidth + 1;
         }
+
+        this.visualizerFrame = requestAnimationFrame(() => this.drawVisualizer());
     }
 
     initListeners() {
         this.playBtn.addEventListener('click', () => this.togglePlay());
 
-        this.presetBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const type = e.currentTarget.dataset.type;
-                this.changePreset(type);
-            });
+        this.presetBtns.forEach((btn) => {
+            btn.addEventListener('click', (event) => this.changePreset(event.currentTarget.dataset.type));
         });
 
-        this.volumeSlider.addEventListener('input', (e) => {
-            this.updateVolume(e.target.value);
-        });
-
-        this.filterSlider.addEventListener('input', (e) => {
-            this.updateFilter(e.target.value);
-        });
+        this.volumeSlider.addEventListener('input', (event) => this.updateVolume(event.target.value));
+        this.filterSlider.addEventListener('input', (event) => this.updateFilter(event.target.value));
 
         this.changePreset('brown');
     }
@@ -406,7 +423,7 @@ class PomodoroTimer {
     initListeners() {
         this.toggleBtn.addEventListener('click', () => this.toggle());
 
-        this.modeBtns.forEach(btn => {
+        this.modeBtns.forEach((btn) => {
             btn.addEventListener('click', () => this.setMode(btn.dataset.mode));
         });
 
@@ -422,7 +439,7 @@ class PomodoroTimer {
         this.completed = false;
         this.nextActions.classList.add('hidden');
 
-        this.modeBtns.forEach(btn => btn.classList.toggle('selected', btn.dataset.mode === mode));
+        this.modeBtns.forEach((btn) => btn.classList.toggle('selected', btn.dataset.mode === mode));
 
         this.render();
         if (autoStart) this.start();
@@ -512,10 +529,8 @@ class PomodoroTimer {
 
         new Notification(title, { body });
     }
-
 }
 
-// Initialize on load
 window.addEventListener('DOMContentLoaded', () => {
     new NoiseGenerator();
     new PomodoroTimer();
